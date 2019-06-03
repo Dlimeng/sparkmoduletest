@@ -74,7 +74,7 @@ object HousePriceAnalyze {
 
     //预处理
     //1.处理房价
-    df=df.withColumn("medianHouseValue",df("medianHouseValue")/100000)
+    df.withColumn("medianHouseValue",df("medianHouseValue")/100000)
 
     /**
       * 2
@@ -82,22 +82,23 @@ object HousePriceAnalyze {
       * 每个家庭的平均人数：populationPerHousehold
       * 卧室在总房间的占比：bedroomsPerRoom
       */
-    df = df.withColumn("roomsPerHousehold", df("totalRooms")/df("households"))
+    df.withColumn("roomsPerHousehold", df("totalRooms")/df("households"))
         .withColumn("populationPerHousehold", df("population")/df("households"))
       .withColumn("bedroomsPerRoom", df("totalBedRooms")/df("totalRooms"))
 
     //3.去除无关值，比如经纬度
-    df = df.select("medianHouseValue","totalBedrooms","population","households","medianIncome"
-      ,"roomsPerHousehold","populationPerHousehold","bedroomsPerRoom")
+    df.select("medianHouseValue","totalBedrooms","population","households","medianIncome"
+      ,"roomsPerHousehold","populationPerHousehold","bedroomsPerRoom").createOrReplaceTempView("tmp1")
+
     //Vectors.
 
-    //拆分
-    val inputData=df.rdd.map(f=>{
+    scc.sql("select * from tmp1").map(f=>{
       val v=Vectors.dense(f.getDouble(1),f.getDouble(2),
         f.getDouble(3),f.getDouble(4),f.getDouble(5),
-          f.getDouble(6),f.getDouble(7))
-       (f.getDouble(0),v)
-    })
+        f.getDouble(6),f.getDouble(7))
+      (f.getDouble(0),v)
+    }).toDF("","")
+    //拆分
 
     //val df2 = scc.createDataFrame(inputData,VectorMode.getClass)
     //println(df2.take(2))
