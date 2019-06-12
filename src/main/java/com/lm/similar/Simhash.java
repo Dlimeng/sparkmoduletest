@@ -38,6 +38,13 @@ public class Simhash implements Serializable {
             storage.add(new HashMap<String, List<Long>>());}
     }
 
+    public Simhash(boolean status) {
+        if(status){
+            for (int i = 0; i < fracCount; i++){
+                storage.add(new HashMap<String, List<Long>>());}
+        }
+    }
+
     public Simhash(int fracCount, int hammingThresh) {
         this.fracCount = fracCount;
         fracBitNum = bitNum / fracCount;
