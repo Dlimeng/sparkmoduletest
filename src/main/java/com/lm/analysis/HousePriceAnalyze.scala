@@ -144,7 +144,7 @@ object HousePriceAnalyze {
 
     println("输出预测结果")
     val predict_result: DataFrame = predicted.selectExpr("scaledFeatures", "label", "round(prediction,1) as prediction")
-    predict_result.take(1).foreach(println(_))
+    predict_result.take(2).foreach(println(_))
     sparkSession.stop()
   }
 
