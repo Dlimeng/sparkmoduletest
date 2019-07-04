@@ -1,7 +1,6 @@
-package com.lm
+package com.lm.streaming
 
 import com.lm.similar.Simhash
-
 
 /**
   * @Author: limeng
