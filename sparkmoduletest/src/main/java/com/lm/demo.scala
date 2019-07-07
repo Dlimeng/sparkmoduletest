@@ -1,4 +1,4 @@
-package com.lm.streaming
+package com.lm
 
 import com.lm.similar.Simhash
 

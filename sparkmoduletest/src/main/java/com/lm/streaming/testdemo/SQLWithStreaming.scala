@@ -1,5 +1,6 @@
-package com.lm.streaming.demo
+package demo
 
+import com.lm.demo
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.streaming.{Minutes, Seconds, StreamingContext}
 import org.apache.spark.streaming.dstream.{DStream, ReceiverInputDStream}
