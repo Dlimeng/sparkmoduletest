@@ -21,7 +21,7 @@ object GraphxDemo {
     val vertices1:VertexRDD[Int] = myGraph.aggregateMessages[Int](_.sendToSrc(1),_+_)
 
     //使用pregel 找到最远距离
-    Pregel(myGraph.mapVertices((vid,vd) => 0),0,activeDirection = EdgeDirection.Out)
+   // Pregel(myGraph.mapVertices((vid,vd) => 0),0,activeDirection = EdgeDirection.Out)
 
   }
 
