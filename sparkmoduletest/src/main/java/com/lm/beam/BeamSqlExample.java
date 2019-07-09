@@ -24,6 +24,7 @@ public class BeamSqlExample {
 
         Pipeline pipeline = Pipeline.create(options);
 
+        // define the input row format
         Schema type =
                 Schema.builder().addInt32Field("c1").addStringField("c2").addDoubleField("c3").build();
 
@@ -31,23 +32,32 @@ public class BeamSqlExample {
         Row row2 = Row.withSchema(type).addValues(2, "row", 2.0).build();
         Row row3 = Row.withSchema(type).addValues(3, "row", 3.0).build();
 
-        PCollection<Row> inputTable = PBegin.in(pipeline).apply(Create.of(row1,row2,row3)
-                .withSchema(type, SerializableFunctions.identity(), SerializableFunctions.identity()));
+        // create a source PCollection with Create.of();
+        PCollection<Row> inputTable =
+                PBegin.in(pipeline)
+                        .apply(
+                                Create.of(row1, row2, row3)
+                                        .withSchema(
+                                                type, SerializableFunctions.identity(), SerializableFunctions.identity()));
 
+        // Case 1. run a simple SQL query over input PCollection with BeamSql.simpleQuery;
         PCollection<Row> outputStream =
                 inputTable.apply(SqlTransform.query("select c1, c2, c3 from PCOLLECTION where c1 > 1"));
 
-        outputStream.apply("",MapElements.via(
-                new SimpleFunction<Row, Void>() {
-                    @Override
-                    public @Nullable Void apply(Row input) {
-                        // expect output:
-                        //  PCOLLECTION: [3, row, 3.0]
-                        //  PCOLLECTION: [2, row, 2.0]
-                        System.out.println("PCOLLECTION: " + input.getValues());
-                        return null;
-                    }
-                }));
+        outputStream.apply(
+                "log_result",
+                MapElements.via(
+                        new SimpleFunction<Row, Void>() {
+                            @Override
+                            public @Nullable Void apply(Row input) {
+                                // expect output:
+                                //  PCOLLECTION: [3, row, 3.0]
+                                //  PCOLLECTION: [2, row, 2.0]
+                                System.out.println("PCOLLECTION: " + input.getValues());
+                                return null;
+                            }
+                        }));
+
         PCollection<Row> outputStream2 = PCollectionTuple.of(new TupleTag<>("CASE1_RESULT"), outputStream)
                 .apply(SqlTransform.query("select c2, sum(c3) from CASE1_RESULT group by c2"));
 
