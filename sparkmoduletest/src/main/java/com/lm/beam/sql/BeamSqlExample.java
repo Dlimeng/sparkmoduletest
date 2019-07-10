@@ -1,4 +1,4 @@
-package com.lm.beam;
+package com.lm.beam.sql;
 
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.Pipeline;
@@ -13,6 +13,12 @@ import org.apache.beam.sdk.transforms.SimpleFunction;
 import org.apache.beam.sdk.values.*;
 import javax.annotation.Nullable;
 /**
+ *
+ * Caused by: java.lang.ClassCastException: Cannot cast org.apache.beam.sdk.extensions.sql.impl.planner.BeamRelDataTypeSystem to org.apache.calcite.rel.type.RelDataTypeSystem
+ * 	at java.lang.Class.cast(Class.java:3369)
+ * 	at org.apache.calcite.avatica.ConnectionConfigImpl$4.apply(ConnectionConfigImpl.java:229)
+ * 	... 24 more
+ *
  * @Author: limeng
  * @Date: 2019/7/9 16:45
  */
