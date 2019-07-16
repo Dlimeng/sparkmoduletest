@@ -38,7 +38,8 @@ public class MinimalWordCount {
 
                 }))
                 .apply(Count.<String> perElement()) // 统计每一个Word的Count
-                .apply("ConcatResultKVs", MapElements.via( // 拼接最后的格式化输出（Key为Word，Value为Count）
+                .apply("ConcatResultKVs", MapElements.via(
+                        // 拼接最后的格式化输出（Key为Word，Value为Count）
                         new SimpleFunction<KV<String, Long>, String>() {
 
                             @Override
