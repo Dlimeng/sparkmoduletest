@@ -43,7 +43,6 @@ public class MyDataSource implements DataSource, Serializable {
     @Override
     public PrintWriter getLogWriter() throws SQLException {
 
-
         return null;
     }
 
@@ -62,7 +61,7 @@ public class MyDataSource implements DataSource, Serializable {
     @Override
     public void setLogWriter(PrintWriter arg0) throws SQLException {
         // TODO Auto-generated method stub
-
+        arg0.println(System.out);
     }
 
     @Override
