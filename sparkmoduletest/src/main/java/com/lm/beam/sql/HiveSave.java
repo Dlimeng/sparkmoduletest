@@ -14,12 +14,10 @@ import org.apache.beam.sdk.schemas.SchemaCoder;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.Row;
+import org.apache.hive.jdbc.HivePreparedStatement;
 
 import java.beans.PropertyVetoException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -63,11 +61,13 @@ public class HiveSave {
                                 .withDataSourceConfiguration(
                                         JdbcIO.DataSourceConfiguration.create(
                                               cpds))
-                                .withStatement("insert into test select * from test")
-                                .withPreparedStatementSetter(
-                                        (element, statement) -> {
-
-                                        }).withBatchSize(10L)
+                                .withStatement("insert into a_mart.test values(\"333\",\"text\")")
+                                .withPreparedStatementSetter(new JdbcIO.PreparedStatementSetter<Row>() {
+                                    @Override
+                                    public void setParameters(Row element, PreparedStatement preparedStatement) throws Exception {
+                                        preparedStatement.executeUpdate();
+                                    }
+                                })
                 );
 
         System.out.println("success");
@@ -75,6 +75,13 @@ public class HiveSave {
 
     }
 
+    static class PrepareStatementFromTestRow implements JdbcIO.PreparedStatementSetter<Row> {
+
+        @Override
+        public void setParameters(Row element, PreparedStatement preparedStatement) throws Exception {
+
+        }
+    }
 
 
 

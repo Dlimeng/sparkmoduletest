@@ -16,7 +16,7 @@
         <hadoop.version>2.7.3</hadoop.version>
         <beam.version>2.9.0</beam.version>
         <scala.compat.version>2.11</scala.compat.version>
-        <hive.version>1.2.1</hive.version>
+        <hive.version>1.1.1</hive.version>
     </properties>
 
     <dependencies>
@@ -277,17 +277,7 @@
             <version>2.6.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.hive.hcatalog</groupId>
-            <artifactId>hive-hcatalog-core</artifactId>
-            <version>${hive.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.hive</groupId>
-                    <artifactId>hive-exec</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>

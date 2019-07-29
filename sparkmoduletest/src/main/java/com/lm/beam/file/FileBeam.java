@@ -12,8 +12,12 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.*;
 import java.beans.PropertyVetoException;
+import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+
 import org.apache.beam.sdk.values.*;
 import org.apache.hadoop.conf.Configuration;
 
@@ -33,8 +37,28 @@ public class FileBeam {
 
         //startDocumentImportPipeline(options);
 
-       startDocumentImportPipeline2(pipeline);
+       //startDocumentImportPipeline2(pipeline);
+
+        List<String> list=new ArrayList<>();
+        String c1="c1";
+        String c2="c2";
+        String c3="c3";
+        String s1="insert into  t(name,id) values(\"15\",15)";
+        String s2="insert into  t(name,id) values(\"16\",16)";
+        String s3="insert into  t(name,id) values(\"17\",17)";
+
+//        Pipeline p1 = save(pipeline, s1).getPipeline();
+//        Pipeline p2 = save(p1, s2).getPipeline();
+//        save(p2, s3);
+        TupleTag<String> t1=new TupleTag<>();
+
+        save(pipeline, s1).getPipeline().run();
+        save(pipeline, s2).getPipeline().run();
+        save(pipeline, s3).getPipeline().run();
+
+
         pipeline.run();
+
 
     }
 
@@ -42,8 +66,10 @@ public class FileBeam {
         @DoFn.ProcessElement
         public void processElement(ProcessContext c) throws Exception {
             System.out.println(c.element().toString());
+            c.output(c.element());
         }
     }
+
 
     public static void startDocumentImportPipeline(IndexerPipelineOptions pipelineOptions) {
         WordCountOptions options = PipelineOptionsFactory.create().as(WordCountOptions.class);
@@ -85,7 +111,7 @@ public class FileBeam {
                 }));
     }
 
-    public static void save(Pipeline pipeline,String sql){
+    public static PDone save(Pipeline pipeline,String sql,String sq2){
         ComboPooledDataSource cpds = new ComboPooledDataSource();
         try {
             cpds.setDriverClass("com.mysql.jdbc.Driver");
@@ -96,12 +122,11 @@ public class FileBeam {
         cpds.setUser("root");
         cpds.setPassword("root");
 
-        System.out.println("22222"+sql);
         Schema type =
                 Schema.builder().addStringField("sass").build();
         Row build = Row.withSchema(type).addValue("123").build();
-
-        pipeline
+        PCollection<Row> apply1 = pipeline.apply(Create.of(build));
+        PDone apply = pipeline
                 .apply(Create.of(build))
                 .apply(
                         JdbcIO.<Row>write()
@@ -111,12 +136,43 @@ public class FileBeam {
                                 .withStatement(sql)
                                 .withPreparedStatementSetter(
                                         (element, statement) -> {
-
+                                            statement.executeUpdate();
                                         })
                 );
+        return apply;
 
     }
 
+    public static PDone save(Pipeline pipeline,String sql){
+        ComboPooledDataSource cpds = new ComboPooledDataSource();
+        try {
+            cpds.setDriverClass("com.mysql.jdbc.Driver");
+        } catch (PropertyVetoException e) {
+            e.printStackTrace();
+        }
+        cpds.setJdbcUrl("jdbc:mysql://192.168.20.115:3306/test");
+        cpds.setUser("root");
+        cpds.setPassword("root");
 
+        Schema type =
+                Schema.builder().addStringField("sass").build();
+        Row build = Row.withSchema(type).addValue("123").build();
+
+        PDone apply = pipeline
+                .apply(Create.of(build))
+                .apply(
+                        JdbcIO.<Row>write()
+                                .withDataSourceConfiguration(
+                                        JdbcIO.DataSourceConfiguration.create(
+                                                cpds))
+                                .withStatement("")
+                                .withPreparedStatementSetter(
+                                        (element, statement) -> {
+                                            statement.executeUpdate();
+                                        })
+                );
+        return apply;
+
+    }
 
 }

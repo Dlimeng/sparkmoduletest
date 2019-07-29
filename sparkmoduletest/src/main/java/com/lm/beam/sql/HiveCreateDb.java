@@ -40,15 +40,15 @@ public class HiveCreateDb {
 
        // SerializableCoder.of(ds.getClass());
         ComboPooledDataSource cpds = new ComboPooledDataSource();
-//        cpds.setDriverClass(driverName);
-//        cpds.setJdbcUrl("jdbc:hive2://192.168.20.117:10000/a_mart");
-//        cpds.setUser("hive");
-//        cpds.setPassword("hive");
+        cpds.setDriverClass(driverName);
+        cpds.setJdbcUrl("jdbc:hive2://192.168.20.117:10000/a_mart");
+        cpds.setUser("hive");
+        cpds.setPassword("hive");
 
-        cpds.setDriverClass("com.mysql.jdbc.Driver");
-        cpds.setJdbcUrl("jdbc:mysql://192.168.20.115:3306/test");
-        cpds.setUser("root");
-        cpds.setPassword("root");
+//        cpds.setDriverClass("com.mysql.jdbc.Driver");
+//        cpds.setJdbcUrl("jdbc:mysql://192.168.20.115:3306/test");
+//        cpds.setUser("root");
+//        cpds.setPassword("root");
 
         Connection connection = cpds.getConnection();
         Integer vendorTypeNumber = JDBCType.VARCHAR.getVendorTypeNumber();
@@ -84,19 +84,19 @@ public class HiveCreateDb {
         }
         //CoderRegistry cr = pipeline.getCoderRegistry();
 
-//        pipeline.apply(JdbcIO.<Map<String,Object>>read()
-//                        .withDataSourceConfiguration(JdbcIO.DataSourceConfiguration.create(cpds))
-//                .withCoder(MapCoder.of(StringUtf8Coder))
-//                        .withQuery("select * from test")
-//                .withRowMapper(new JdbcIO.RowMapper<KV<String,String>>(){
-//
-//                    @Override
-//                    public KV<String, String> mapRow(ResultSet resultSet) throws Exception {
-//                        String g = resultSet.getString(1);
-//                        System.out.println(g);
-//                        return KV.of(resultSet.getString(1), resultSet.getString(2));
-//                    }
-//                }));
+        pipeline.apply(JdbcIO.<KV<String, String>>read()
+                        .withDataSourceConfiguration(JdbcIO.DataSourceConfiguration.create(cpds))
+                .withCoder(KvCoder.of(StringUtf8Coder.of(),StringUtf8Coder.of()))
+                        .withQuery("select * from test")
+                .withRowMapper(new JdbcIO.RowMapper<KV<String,String>>(){
+
+                    @Override
+                    public KV<String, String> mapRow(ResultSet resultSet) throws Exception {
+                        String g = resultSet.getString(1);
+                        System.out.println(g);
+                        return KV.of(resultSet.getString(1), resultSet.getString(2));
+                    }
+                }));
 
         /*PCollection<TestRow> apply = pipeline.apply(JdbcIO.<TestRow>read().
                 withDataSourceConfiguration(JdbcIO.DataSourceConfiguration
