@@ -40,13 +40,18 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 /**
  * 自动调用一些方法hive不支持
+ *
+ * JdbcIO.DataSourceConfiguration.create(
+ *                                         cpds).withConnectionProperties("hive")
+ *                                         设置定义hive操作
+ *
  * @Author: limeng
  * @Date: 2019/7/25 17:03
  */
 @Experimental(Experimental.Kind.SOURCE_SINK)
 public class JdbcIO {
 
-    private static final Logger LOG = LoggerFactory.getLogger(org.apache.beam.sdk.io.jdbc.JdbcIO.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JdbcIO.class);
 
     /**
      * Read data from a JDBC datasource.
@@ -100,7 +105,7 @@ public class JdbcIO {
     private JdbcIO() {}
 
     /**
-     * An interface used by {@link org.apache.beam.sdk.io.jdbc.JdbcIO.Read} for converting each row of the {@link ResultSet} into
+     * An interface used by {@link JdbcIO.Read} for converting each row of the {@link ResultSet} into
      * an element of the resulting {@link PCollection}.
      */
     @FunctionalInterface
@@ -366,7 +371,7 @@ public class JdbcIO {
             return input
                     .apply(Create.of((Void) null))
                     .apply(
-                            org.apache.beam.sdk.io.jdbc.JdbcIO.<Void, T>readAll()
+                            JdbcIO.<Void, T>readAll()
                                     .withDataSourceConfiguration(getDataSourceConfiguration())
                                     .withQuery(getQuery())
                                     .withCoder(getCoder())
@@ -669,10 +674,17 @@ public class JdbcIO {
             private DataSource dataSource;
             private Connection connection;
             private PreparedStatement preparedStatement;
+            private boolean hiveStatus = false;
             private List<T> records = new ArrayList<>();
 
             public WriteFn(Write<T> spec) {
                 this.spec = spec;
+                ValueProvider<String> connectionProperties = spec.getDataSourceConfiguration().getConnectionProperties();
+                if(connectionProperties != null){
+                    if(connectionProperties.get().equals("hive")){
+                        hiveStatus = true;
+                    }
+                }
             }
 
             @Setup
@@ -683,7 +695,9 @@ public class JdbcIO {
             @StartBundle
             public void startBundle() throws Exception {
                 connection = dataSource.getConnection();
-                connection.setAutoCommit(false);
+                if(!hiveStatus){
+                    connection.setAutoCommit(false);
+                }
                 preparedStatement = connection.prepareStatement(spec.getStatement());
             }
 
@@ -705,7 +719,10 @@ public class JdbcIO {
                     /**
                      * jdbcio影响hive HivePreparedStatement有些方法不支持
                      */
-                   // preparedStatement.addBatch();
+                    LOG.info("hiveStatus:{}",hiveStatus);
+                    if(!hiveStatus){
+                        preparedStatement.addBatch();
+                    }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -745,9 +762,10 @@ public class JdbcIO {
                              * preparedStatement.executeBatch();
                              * connection.commit();
                              */
-                            //preparedStatement.executeBatch();
-                            // commit the changes
-                            //connection.commit();
+                            if(!hiveStatus){
+                                preparedStatement.executeBatch();
+                                connection.commit();
+                            }
                             break;
                         } catch (Exception exception) {
                             /**
@@ -756,9 +774,14 @@ public class JdbcIO {
                              *                                 throw exception;
                              *                             }
                              */
+                            if(!hiveStatus){
+                                if (!spec.getRetryStrategy().apply((SQLException) exception)) {
+                                    throw exception;
+                                }
+                                preparedStatement.clearBatch();
+                            }
                             LOG.warn("Deadlock detected, retrying", exception);
                             // clean up the statement batch and the connection state
-                            //preparedStatement.clearBatch();
                             connection.rollback();
                             if (!BackOffUtils.next(sleeper, backoff)) {
                                 // we tried the max number of times

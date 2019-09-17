@@ -1,10 +1,12 @@
 package com.lm.beam.file;
 
-import com.lm.beam.sql.model.IndexerPipelineOptions;
+import com.lm.beam.model.IndexerPipelineOptions;
 import com.lm.beam.sql.model.WordCountOptions;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.coders.StringUtf8Coder;
+import org.apache.beam.sdk.io.FileIO;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -12,20 +14,29 @@ import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.*;
 import java.beans.PropertyVetoException;
+import java.io.IOException;
+import java.io.Serializable;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.beam.sdk.transforms.splittabledofn.RestrictionTracker;
 import org.apache.beam.sdk.values.*;
 import org.apache.hadoop.conf.Configuration;
+import org.joda.time.Duration;
+import org.junit.Test;
+
+import static org.apache.beam.sdk.io.Compression.GZIP;
+import static org.apache.beam.sdk.transforms.Watch.Growth.afterTimeSinceNewOutput;
+import static org.apache.beam.sdk.values.TypeDescriptors.strings;
 
 /**
  * @Author: limeng
  * @Date: 2019/7/23 19:39
  */
-public class FileBeam {
+public class FileBeam implements Serializable {
     public static void main(String[] args) {
 
         IndexerPipelineOptions options = PipelineOptionsFactory.fromArgs(args).withValidation().as(IndexerPipelineOptions.class);
@@ -62,8 +73,61 @@ public class FileBeam {
 
     }
 
+    @Test
+    public void testRead()  throws IOException{
+        IndexerPipelineOptions options = PipelineOptionsFactory.fromArgs("").withValidation().as(IndexerPipelineOptions.class);
+        // 显式指定PipelineRunner：DirectRunner（Local模式）
+        options.setRunner(DirectRunner.class);
+        Pipeline pipeline = Pipeline.create(options);
+
+
+       // pipeline.apply(TextIO.read().from("D:\\工具\\workspace\\sparkmoduletest\\sparkmoduletest\\src\\main\\resources\\files").withHintMatchesManyFiles());
+
+        PCollection<KV<String, String>> apply = pipeline.apply(FileIO.match().filepattern("D:/工具/workspace/sparkmoduletest/sparkmoduletest/src/main/resources/files/"))
+                .apply(FileIO.readMatches())
+                .apply(MapElements.into(TypeDescriptors.kvs(TypeDescriptors.strings(), TypeDescriptors.strings()))
+                        .via(new SerializableFunction<FileIO.ReadableFile, KV<String, String>>() {
+                                 @Override
+                                 public KV<String, String> apply(FileIO.ReadableFile input) {
+                                     try {
+                                         return KV.of(input.getMetadata().resourceId().toString(), input.readFullyAsUTF8String());
+                                     } catch (IOException e) {
+                                         e.printStackTrace();
+                                         return null;
+                                     }
+                                 }
+                             }
+                        ));
+
+        //apply.apply(ParDo.of(new PrintByKV()));
+        pipeline.run().waitUntilFinish();
+    }
+
+    @Test
+    public void testRead2(){
+
+        IndexerPipelineOptions options = PipelineOptionsFactory.fromArgs("").withValidation().as(IndexerPipelineOptions.class);
+        // 显式指定PipelineRunner：DirectRunner（Local模式）
+        options.setRunner(DirectRunner.class);
+        Pipeline pipeline = Pipeline.create(options);
+
+        PCollection<String> lines = pipeline.apply(TextIO.read().from("D:/工具/workspace/sparkmoduletest/sparkmoduletest/src/main/resources/files/*")
+                        .withHintMatchesManyFiles());
+
+       pipeline.run().waitUntilFinish();
+    }
+
+    private static class PrintByKV extends DoFn<KV<String, String>, KV<String, String>> {
+        @ProcessElement
+        public void processElement(ProcessContext c) throws Exception {
+            KV<String, String> element = c.element();
+            System.out.println("key: "+element.getKey()+" value:"+ element.getValue());
+            c.output(element);
+        }
+    }
+
     private static class PrintFn<T> extends DoFn<T, T> {
-        @DoFn.ProcessElement
+        @ProcessElement
         public void processElement(ProcessContext c) throws Exception {
             System.out.println(c.element().toString());
             c.output(c.element());

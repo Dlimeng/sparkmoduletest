@@ -2,6 +2,7 @@ package com.lm.beam;
 
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.PipelineResult;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -11,20 +12,23 @@ import org.apache.beam.sdk.transforms.MapElements;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.transforms.SimpleFunction;
 import org.apache.beam.sdk.values.KV;
+
+import java.io.IOException;
+
 /**
  * @Author: limeng
  * @Date: 2019/7/8 19:23
  */
 public class MinimalWordCount {
     @SuppressWarnings("serial")
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         PipelineOptions options = PipelineOptionsFactory.create();
         options.setRunner(DirectRunner.class); // 显式指定PipelineRunner：DirectRunner（Local模式）
 
         Pipeline pipeline = Pipeline.create(options);
 
         // 读取本地文件，构建第一个PTransform
-        pipeline.apply("ReadLines", TextIO.read().from("/words"))
+        pipeline.apply("ReadLines", TextIO.read().from(""))
                 .apply("ExtractWords", ParDo.of(new DoFn<String, String>() {
                     // 对文件中每一行进行处理（实际上Split）
                     @ProcessElement
@@ -51,6 +55,7 @@ public class MinimalWordCount {
                 .apply(TextIO.write().to("wordcount"));
         // 输出结果
 
-        pipeline.run().waitUntilFinish();
+        PipelineResult run = pipeline.run();
+        //run.cancel();
     }
 }

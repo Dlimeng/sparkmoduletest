@@ -16,7 +16,7 @@
         <hadoop.version>2.7.3</hadoop.version>
         <beam.version>2.9.0</beam.version>
         <scala.compat.version>2.11</scala.compat.version>
-        <hive.version>1.1.1</hive.version>
+        <hive.version>2.1.0</hive.version>
     </properties>
 
     <dependencies>
@@ -108,12 +108,12 @@
         <scope>compile</scope>
     </dependency>
 
-    <dependency>
-        <groupId>org.apache.spark</groupId>
-        <artifactId>spark-hive_2.11</artifactId>
-        <version>2.1.1</version>
-        <scope>compile</scope>
-    </dependency>
+    <!--<dependency>-->
+        <!--<groupId>org.apache.spark</groupId>-->
+        <!--<artifactId>spark-hive_2.11</artifactId>-->
+        <!--<version>2.1.1</version>-->
+        <!--<scope>compile</scope>-->
+    <!--</dependency>-->
 
     <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -210,6 +210,24 @@
             <artifactId>jieba-analysis</artifactId>
             <version>1.0.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.11</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming_2.11</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-runners-spark</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>org.apache.beam</groupId>
@@ -223,25 +241,69 @@
             <version>${beam.version}</version>
         </dependency>
 
+
+
         <!--<dependency>-->
             <!--<groupId>org.apache.beam</groupId>-->
             <!--<artifactId>beam-sdks-java-extensions-sql</artifactId>-->
             <!--<version>${beam.version}</version>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.beam</groupId>-->
+                    <!--<artifactId>beam-runners-direct-java</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.beam</groupId>-->
+                    <!--<artifactId>beam-sdks-java-core</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.slf4j</groupId>-->
+                    <!--<artifactId>slf4j-api</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.commons</groupId>-->
+                    <!--<artifactId>commons-lang3</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>com.fasterxml.jackson.core</groupId>-->
+                    <!--<artifactId>jackson-databind</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>joda-time</groupId>-->
+                    <!--<artifactId>joda-time</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.beam</groupId>-->
+                    <!--<artifactId>beam-sdks-java-extensions-join-library</artifactId>-->
+                <!--</exclusion>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.calcite</groupId>-->
+                    <!--<artifactId>calcite-avatica</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
         <!--</dependency>-->
-
+        <!--<dependency>-->
+            <!--<groupId>org.apache.beam</groupId>-->
+            <!--<artifactId>beam-sdks-java-extensions-join-library</artifactId>-->
+            <!--<version>${beam.version}</version>-->
+            <!--<exclusions>-->
+                <!--<exclusion>-->
+                    <!--<groupId>org.apache.calcite</groupId>-->
+                    <!--<artifactId>calcite-avatica</artifactId>-->
+                <!--</exclusion>-->
+            <!--</exclusions>-->
+        <!--</dependency>-->
         <dependency>
             <groupId>org.apache.beam</groupId>
-            <artifactId>beam-sdks-java-extensions-google-cloud-platform-core</artifactId>
+            <artifactId>beam-sdks-java-io-hadoop-common</artifactId>
             <version>${beam.version}</version>
-
         </dependency>
 
         <dependency>
             <groupId>org.apache.beam</groupId>
-            <artifactId>beam-sdks-java-io-jdbc</artifactId>
+            <artifactId>beam-sdks-java-io-hadoop-file-system</artifactId>
             <version>${beam.version}</version>
         </dependency>
-
 
         <dependency>
             <groupId>org.apache.beam</groupId>
@@ -259,25 +321,66 @@
             </exclusions>
         </dependency>
 
+
         <dependency>
             <groupId>org.apache.beam</groupId>
             <artifactId>beam-sdks-java-io-hadoop-common</artifactId>
-            <version>2.9.0</version>
+            <version>${beam.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.beam</groupId>
             <artifactId>beam-sdks-java-io-hadoop-file-system</artifactId>
-            <version>2.9.0</version>
+            <version>${beam.version}</version>
         </dependency>
+
+
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-io-jdbc</artifactId>
+            <version>${beam.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.calcite</groupId>
+                    <artifactId>calcite-avatica</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.beam</groupId>
+            <artifactId>beam-sdks-java-io-elasticsearch</artifactId>
+            <version>${beam.version}</version>
+        </dependency>
+
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-common</artifactId>
-            <version>2.6.0</version>
+            <version>${hadoop.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-hdfs</artifactId>
+            <version>${hadoop.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
+        <dependency>
+            <groupId>org.apache.hive.hcatalog</groupId>
+            <artifactId>hive-hcatalog-core</artifactId>
+            <version>${hive.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
@@ -303,24 +406,42 @@
             <artifactId>guava</artifactId>
             <version>18.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.avro</groupId>
-            <artifactId>avro</artifactId>
-            <version>1.8.1</version>
-        </dependency>
 
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.0.26</version>
-        </dependency>
+
 
         <dependency>
             <groupId>com.mchange</groupId>
             <artifactId>c3p0</artifactId>
             <version>0.9.5.3</version>
         </dependency>
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>2.5.0</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+            <version>1.13</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.google.auto.value</groupId>
+            <artifactId>auto-value-annotations</artifactId>
+            <version>1.6</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.8</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.oracle</groupId>
+            <artifactId>ojdbc6</artifactId>
+            <version>11.2.0.1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -425,4 +546,22 @@
 
         </plugins>
     </build>
+
+
+    <repositories>
+        <repository>
+            <id>nexus</id>
+            <name>remote-nexus</name>
+            <url>http://192.168.20.100:8081/nexus/content/groups/public</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+            <layout>default</layout>
+        </repository>
+    </repositories>
 </project>

@@ -1,6 +1,5 @@
 package com.lm.beam.sql.model;
 
-import com.google.auto.value.AutoValue;
 import org.apache.beam.sdk.coders.AvroCoder;
 import org.apache.beam.sdk.coders.DefaultCoder;
 
@@ -62,5 +61,13 @@ public class TestRow  implements Serializable, Comparable<TestRow> {
     @Override
     public int hashCode() {
         return Objects.hash(id, name);
+    }
+
+    @Override
+    public String toString() {
+        return "TestRow{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                '}';
     }
 }
