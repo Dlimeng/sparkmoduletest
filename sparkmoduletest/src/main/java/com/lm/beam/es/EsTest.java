@@ -33,6 +33,8 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 /**
@@ -100,10 +102,11 @@ public class EsTest implements Serializable {
 
 
 
-       String sql="{\"ids\":\"3\",\"username\":\"测试测试2\",\"tag_list\":[{\"score\": 600,\"title\": \"title6\"},{\"score\": 500,\"title\": \"title5\"}]}";
+        String sql="{\"ids\":\"3\",\"username\":\"测试测试2\",\"tag_list\":[{\"score\": 600,\"title\": \"title6\"},{\"score\": 500,\"title\": \"title5\"}]}";
+        String value="[{\"score\": 600,\"title\": \"title6\"},{\"score\": 500,\"title\": \"title5\"}";
 
-        pipeline.apply(Create.of(sql)).apply(ElasticsearchIO.write().withConnectionConfiguration( ElasticsearchIO
-                .ConnectionConfiguration.create(new String[]{"http://192.168.100.102:9210"}, "kd-test", "my-type")));
+//        pipeline.apply(Create.of(sql)).apply(ElasticsearchIO.write().withConnectionConfiguration( ElasticsearchIO
+//                .ConnectionConfiguration.create(new String[]{"http://192.168.100.102:9210"}, "kd-test", "my-type")));
         pipeline.run().waitUntilFinish();
     }
 
