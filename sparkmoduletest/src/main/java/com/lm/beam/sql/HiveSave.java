@@ -70,12 +70,8 @@ public class HiveSave {
                 .withDataSourceConfiguration(
                         JdbcIO.DataSourceConfiguration.create(
                                 cpds))
-                .withStatement(sql)
-                .withPreparedStatementSetter(
-                        (element, statement) -> {
-                            statement.executeUpdate();
-                            //System.out.println("ccc");
-                        }));
+
+                );
         pipeline.run().waitUntilFinish();
     }
 

@@ -442,6 +442,28 @@
             <artifactId>ojdbc6</artifactId>
             <version>11.2.0.1.0</version>
         </dependency>
+
+        <dependency>
+            <!-- 服务器开发需要的jar包 -->
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>1.7.2</version>
+        </dependency>
+        <dependency>
+            <!-- 嵌入式开发需要的jar包 -->
+            <groupId>org.neo4j</groupId>
+            <artifactId>neo4j</artifactId>
+            <version>3.4.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>compile</scope>
+            <version>1.18.2</version>
+            <optional>true</optional>
+        </dependency>
+
     </dependencies>
 
     <build>
