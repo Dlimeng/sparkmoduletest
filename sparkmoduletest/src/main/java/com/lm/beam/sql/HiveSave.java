@@ -5,33 +5,46 @@ import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.runners.spark.SparkPipelineOptions;
 import org.apache.beam.sdk.Pipeline;
+import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.coders.KvCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.coders.VarIntCoder;
+import org.apache.beam.sdk.io.hadoop.WritableCoder;
+import org.apache.beam.sdk.io.hcatalog.HCatalogIO;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.schemas.SchemaCoder;
 import org.apache.beam.sdk.transforms.Create;
+import org.apache.beam.sdk.transforms.DoFn;
+import org.apache.beam.sdk.transforms.ParDo;
+import org.apache.beam.sdk.transforms.Partition;
+import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.KV;
+import org.apache.beam.sdk.values.PCollection;
+import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.Row;
 import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
+import org.apache.hive.hcatalog.common.HCatException;
+import org.apache.hive.hcatalog.data.DefaultHCatRecord;
+import org.apache.hive.hcatalog.data.HCatRecord;
+import org.apache.hive.hcatalog.data.schema.HCatFieldSchema;
+import org.apache.hive.hcatalog.data.schema.HCatSchema;
 import org.apache.hive.jdbc.HivePreparedStatement;
 import org.junit.Test;
 
 import java.beans.PropertyVetoException;
+import java.io.Serializable;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @Author: limeng
  * @Date: 2019/7/20 20:09
  */
-public class HiveSave {
+public class HiveSave implements Serializable {
     private static String driverName = "org.apache.hive.jdbc.HiveDriver";
     public static void main(String[] args) throws PropertyVetoException, SQLException {
         //SparkPipelineOptions
@@ -112,6 +125,84 @@ public class HiveSave {
     }
 
 
+    @Test
+    public void testSave3() throws HCatException, PropertyVetoException {
+
+        PipelineOptions options = PipelineOptionsFactory.create();
+        options.setRunner(DirectRunner.class);
+        Pipeline pipeline = Pipeline.create(options);
+        List<HCatFieldSchema> columns = new ArrayList<>(4);
+        columns.add(new HCatFieldSchema("entid", TypeInfoFactory.intTypeInfo, ""));
+        columns.add(new HCatFieldSchema("entname", TypeInfoFactory.stringTypeInfo, ""));
+        columns.add(new HCatFieldSchema("personid",TypeInfoFactory.intTypeInfo,""));
+        columns.add(new HCatFieldSchema("partition",TypeInfoFactory.intTypeInfo,""));
+
+        HCatSchema hCatSchema = new HCatSchema(columns);
+
+        List<HCatRecord> expected = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            HCatRecord record = new DefaultHCatRecord(3);
+            record.set("entid",hCatSchema,i);
+            record.set("entname",hCatSchema,"newname"+i);
+            record.set("personid",hCatSchema,i);
+            expected.add(record);
+        }
+
+        String driverClass="com.mysql.jdbc.Driver";
+
+        ComboPooledDataSource cpds = new ComboPooledDataSource();
+        cpds.setDriverClass(driverClass);
+        cpds.setJdbcUrl("jdbc:mysql://40.73.59.12:3306/yuansu_increment?useSSL=false");
+        cpds.setUser("yuansu_increment");
+        cpds.setPassword("Kboxbr201920192019");
+
+
+        PCollection<HCatRecord> record = pipeline.apply(JdbcIO.<HCatRecord>read().
+                withDataSourceConfiguration(JdbcIO.DataSourceConfiguration
+                        .create(cpds)
+
+                ).withCoder(getOutputCoder()).withFetchSize(10000)
+                .withQuery("select entid,entname,personid from company limit 100")
+                .withRowMapper(new JdbcIO.RowMapper<HCatRecord>() {
+                    Random r = new Random(1);
+                    @Override
+                    public HCatRecord mapRow(ResultSet resultSet) throws SQLException, HCatException {
+                        HCatRecord record = new DefaultHCatRecord(4);
+                        record.set("entid", hCatSchema, resultSet.getInt("entid"));
+                        record.set("entname", hCatSchema, resultSet.getString("entname"));
+                        record.set("personid", hCatSchema, resultSet.getInt("entid"));
+                        int i = r.nextInt(10);
+                        record.set("partition", hCatSchema, i);
+                        return record;
+                    }
+                }));
+
+//        PCollectionList<HCatRecord> partition = record.apply(Partition.of(10, new Partition.PartitionFn<HCatRecord>() {
+//            @Override
+//            public int partitionFor(HCatRecord elem, int numPartitions) {
+//                try {
+//                    return elem.getInteger("partition", hCatSchema) / numPartitions;
+//
+//                } catch (HCatException e) {
+//                    e.printStackTrace();
+//                }
+//                return 0;
+//            }
+//        }));
+
+        Map<String, String> configProperties = new HashMap<>();
+        configProperties.put("hive.metastore.uris","thrift://m5.server:9083");
+
+       // PCollection<HCatRecord> record = pipeline.apply("record", Create.of(expected));
+
+//       for (int i = 0; i < partition.size(); i++) {
+//           partition.get(i).apply(HCatalogIO.write().withConfigProperties(configProperties).withDatabase("default").withTable("company_test2").withBatchSize(1024L));
+//
+//        }
+        record.apply(Window.remerge()).apply(HCatalogIO.write().withConfigProperties(configProperties).withDatabase("default").withTable("company_test2").withBatchSize(1024L));
+        Window.remerge();
+        pipeline.run().waitUntilFinish();
+    }
 
 
     /**
@@ -238,6 +329,20 @@ public class HiveSave {
             return result;
         }
         return null;
+    }
+    /**
+     * 类型序列化
+     * @return
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static Coder<HCatRecord> getOutputCoder() {
+        return (Coder) WritableCoder.of(DefaultHCatRecord.class);
+    }
+    public static class  changes extends DoFn<HCatRecord, HCatRecord>{
+        @ProcessElement
+        public void processElement(ProcessContext ctx) throws Exception {
+            ctx.output(ctx.element());
+        }
     }
 
 }

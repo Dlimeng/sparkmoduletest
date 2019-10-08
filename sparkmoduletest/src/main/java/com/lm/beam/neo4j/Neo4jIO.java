@@ -1,7 +1,9 @@
 package com.lm.beam.neo4j;
 
 import com.google.auto.value.AutoValue;
-import org.apache.beam.sdk.io.jdbc.JdbcIO;
+import com.lm.beam.neo4j.AutoValue_Neo4jIO_DriverConfiguration;
+import com.lm.beam.neo4j.AutoValue_Neo4jIO_Write;
+import org.apache.beam.sdk.options.ValueProvider;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.PTransform;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -21,6 +23,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static org.neo4j.driver.v1.Values.parameters;
@@ -30,7 +33,7 @@ import static org.neo4j.driver.v1.Values.parameters;
  * @Date: 2019/9/19 19:16
  */
 public class Neo4jIO {
-    private static final Logger LOG = LoggerFactory.getLogger(JdbcIO.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Neo4jIO.class);
 
     private static final long DEFAULT_BATCH_SIZE = 1000L;
     private static final int DEFAULT_FETCH_SIZE = 50_000;
@@ -38,7 +41,7 @@ public class Neo4jIO {
     private Neo4jIO() {}
 
     public static <T>Write<T> write(){
-        return new AutoValue_Neo4jIO_Write.Builder<T>()
+       return new AutoValue_Neo4jIO_Write.Builder<T>()
                 .setBatchSize(DEFAULT_BATCH_SIZE)
                 .build();
     }
@@ -48,40 +51,80 @@ public class Neo4jIO {
         @Nullable
         abstract  Driver getDriver();
 
+        abstract  Builder builder();
+
+        @Nullable
+        abstract ValueProvider<String> getUrl();
+
+        @Nullable
+        abstract ValueProvider<String> getUsername();
+
+        @Nullable
+        abstract ValueProvider<String> getPassword();
+
         @AutoValue.Builder
         abstract static class Builder{
             abstract  Builder setDriver(Driver driver);
+            abstract  Builder setUrl(ValueProvider<String> url);
+            abstract Builder setUsername(ValueProvider<String> username);
+            abstract Builder setPassword(ValueProvider<String> password);
             abstract DriverConfiguration build();
         }
 
 
         public static DriverConfiguration create(Driver driver){
-            return null;
+            return  new AutoValue_Neo4jIO_DriverConfiguration.Builder().setDriver(driver).build();
         }
+
+        public static DriverConfiguration create(String url,String username,String password){
+            return  new AutoValue_Neo4jIO_DriverConfiguration.Builder()
+                    .setUrl(ValueProvider.StaticValueProvider.of(url))
+                    .setUsername(ValueProvider.StaticValueProvider.of(username))
+                    .setPassword(ValueProvider.StaticValueProvider.of(password))
+                    .build();
+        }
+
+        Driver buildDriver(){
+            Driver driver=null;
+            if(getDriver() != null){
+                driver = getDriver();
+            }else{
+                if(getUrl() != null && getUsername()!=null && getPassword()!=null){
+                    driver = GraphDatabase.driver( getUrl().get(), AuthTokens.basic( getUsername().get(), getPassword().get()));
+                }
+            }
+            return driver;
+        }
+
     }
 
 
     @AutoValue
     public abstract static class Write<T> extends PTransform<PCollection<T>, PDone> {
-        @Nullable
-        abstract Driver getDriver();
+
         @Nullable
         abstract String getStatement();
 
         abstract long getBatchSize();
 
+        abstract String getOptionsType();
+
         abstract Builder<T> toBuilder();
+        @Nullable
+        abstract DriverConfiguration getDriverConfiguration();
 
         @AutoValue.Builder
         abstract static class Builder<T>{
-            abstract Builder<T> setDriver(Driver driver);
+            abstract Builder<T> setDriverConfiguration(DriverConfiguration config);
             abstract Builder<T> setStatement(String statement);
             abstract Builder<T> setBatchSize(long batchSize);
+            abstract Builder<T> setOptionsType(String optionsType);
             abstract Write<T> build();
         }
 
-        public Write<T> withDriver(Driver driver){
-            return toBuilder().setDriver(driver).build();
+
+        public Write<T> withDriverConfiguration(DriverConfiguration config){
+            return toBuilder().setDriverConfiguration(config).build();
         }
 
         public Write<T> withStatement(String statement){
@@ -117,7 +160,7 @@ public class Neo4jIO {
 
         @Setup
         public void setup()  throws Exception {
-            driver = spec.getDriver();
+            driver = spec.getDriverConfiguration().buildDriver();
         }
 
         @StartBundle
@@ -158,7 +201,7 @@ public class Neo4jIO {
                     try {
                         for(T record:records){
                             Value value = processRecord(record);
-                            session.run(spec.getStatement(),value);
+                            tx.run(spec.getStatement(),value);
                         }
                         tx.success();
                         break;
@@ -176,12 +219,24 @@ public class Neo4jIO {
             records.clear();
         }
 
-        private Value processRecord(T record) {
+        private   Void  update( Transaction tx, Value value )
+        {
+            tx.run( spec.getStatement(), value);
+            return null;
+        }
+
+        private Value processRecord(final T record) {
             try {
-                return parameters(record);
+                if(record instanceof Neo4jObject){
+                    Map<String, Object> parMap = ((Neo4jObject) record).getParMap();
+                    Object[] objects = ((Neo4jObject) record).getObjects();
+                    Object[] objectValue = ((Neo4jObject) record).getObjectValue();
+                    return parameters(objectValue);
+                }
             }catch (Exception e){
                 throw new RuntimeException(e);
             }
+            return null;
         }
 
 
