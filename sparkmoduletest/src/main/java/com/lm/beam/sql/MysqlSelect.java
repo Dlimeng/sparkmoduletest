@@ -21,6 +21,9 @@ import java.sql.SQLException;
  * @Date: 2019/8/26 18:41
  */
 public class MysqlSelect {
+
+
+
     public static void main(String[] args) throws PropertyVetoException {
         String driverClass="com.mysql.jdbc.Driver";
         PipelineOptions options = PipelineOptionsFactory.create();
