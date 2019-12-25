@@ -110,23 +110,24 @@ public final class SparkRunner extends PipelineRunner<SparkPipelineResult> {
     @Override
     public SparkPipelineResult run(final Pipeline pipeline) {
         LOG.info("Executing pipeline using the SparkRunner.");
-
+        //初始化结果集
         final SparkPipelineResult result;
         final Future<?> startPipeline;
-
+        //转换器，有界数据和无界数据
         final SparkPipelineTranslator translator;
-
+        //最后执行任务，线程池
         final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
+        //支持容器
         MetricsEnvironment.setMetricsSupported(true);
 
         // visit the pipeline to determine the translation mode
+        //检查，设置转换器状态，是批处理或流处理
         detectTranslationMode(pipeline);
 
         pipeline.replaceAll(SparkTransformOverrides.getDefaultOverrides(mOptions.isStreaming()));
-
+        //匹配sparkMaster格式
         prepareFilesToStageForRemoteClusterExecution(mOptions);
-
+        //流处理
         if (mOptions.isStreaming()) {
             Checkpoint.CheckpointDir checkpointDir = new Checkpoint.CheckpointDir(mOptions.getCheckpointDir());
             SparkRunnerStreamingContextFactory streamingContextFactory =
@@ -169,30 +170,35 @@ public final class SparkRunner extends PipelineRunner<SparkPipelineResult> {
 
             result = new SparkPipelineResult.StreamingMode(startPipeline, jssc);
         } else {
+            //批处理
             // create the evaluation context
             final JavaSparkContext jsc = SparkContextFactory.getSparkContext(mOptions);
+            //执行任务的实例
             final EvaluationContext evaluationContext = new EvaluationContext(jsc, pipeline, mOptions);
+            //获取转换器
             translator = new TransformTranslator.Translator();
 
             // update the cache candidates
             updateCacheCandidates(pipeline, translator, evaluationContext);
-
+            //累加器
             initAccumulators(mOptions, jsc);
 //            startPipeline = null;
-//
+
 //            pipeline.traverseTopologically(new Evaluator(translator, evaluationContext));
 //            evaluationContext.computeOutputs();
             startPipeline =
                     executorService.submit(
                             () -> {
+                                //执行计划转换成RDD
                                 pipeline.traverseTopologically(new Evaluator(translator, evaluationContext));
+                                //
                                 evaluationContext.computeOutputs();
                                 LOG.info("Batch pipeline execution complete.");
                             });
             executorService.shutdown();
 
 
-
+            System.out.println("test");
             result = new SparkPipelineResult.BatchMode(startPipeline, jsc);
         }
 

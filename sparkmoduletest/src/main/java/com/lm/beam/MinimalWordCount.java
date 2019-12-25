@@ -28,8 +28,8 @@ public class MinimalWordCount {
         Pipeline pipeline = Pipeline.create(options);
 
         // 读取本地文件，构建第一个PTransform
-        pipeline.apply("ReadLines", TextIO.read().from(""))
-                .apply("ExtractWords", ParDo.of(new DoFn<String, String>() {
+        pipeline.apply(TextIO.read().from("url"))
+                .apply( ParDo.of(new DoFn<String, String>() {
                     // 对文件中每一行进行处理（实际上Split）
                     @ProcessElement
                     public void processElement(ProcessContext c) {
@@ -42,7 +42,7 @@ public class MinimalWordCount {
 
                 }))
                 .apply(Count.<String> perElement()) // 统计每一个Word的Count
-                .apply("ConcatResultKVs", MapElements.via(
+                .apply(MapElements.via(
                         // 拼接最后的格式化输出（Key为Word，Value为Count）
                         new SimpleFunction<KV<String, Long>, String>() {
 
@@ -55,7 +55,7 @@ public class MinimalWordCount {
                 .apply(TextIO.write().to("wordcount"));
         // 输出结果
 
-        PipelineResult run = pipeline.run();
+       pipeline.run();
         //run.cancel();
     }
 }

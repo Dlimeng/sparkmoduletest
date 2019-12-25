@@ -88,6 +88,7 @@ public class Neo4jTest implements Serializable {
         }
 
 
+
         session.close();
         driver.close();
     }
@@ -180,9 +181,7 @@ public class Neo4jTest implements Serializable {
         List<Neo4jObject> object=new ArrayList<>();
         object.add(neo4jObject1);
         object.add(neo4jObject2);
-        Driver drive = createDrive();
 
-      //  Driver driver = GraphDatabaseTest.driver("bolt://localhost:7687", AuthTokens.basic("neo4j", "limeng"));
 
         PCollection<Neo4jObject> np = pipeline.apply(Create.of(object)).setCoder(SerializableCoder.of(Neo4jObject.class));
         String url="bolt://localhost:7687";
@@ -192,7 +191,10 @@ public class Neo4jTest implements Serializable {
         Neo4jIO.<Neo4jObject>write().withDriverConfiguration(Neo4jIO.DriverConfiguration.create(url,username,password)).withStatement(sql);
         Neo4jIO.<Neo4jObject>write().withDriverConfiguration(Neo4jIO.DriverConfiguration.create(url,username,password)).withStatement(sql);
 
-       // np.apply(Neo4jIO.<Neo4jObject>write().withDriverConfiguration(Neo4jIO.DriverConfiguration.create(url,username,password)).withStatement(sql));
+        np.apply(Neo4jIO.<Neo4jObject>write().withDriverConfiguration(Neo4jIO.DriverConfiguration.create(url,username,password)).withStatement(sql));
+
+
+
 
         pipeline.run().waitUntilFinish();
     }

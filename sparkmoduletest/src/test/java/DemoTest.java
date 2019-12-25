@@ -5,20 +5,12 @@ import org.junit.Test;
  * @Date: 2019/7/24 10:54
  */
 public class DemoTest {
+    static boolean boolValue;
     public static void main(String[] args) {
-        int i=1;
-        int j=1;
-        System.out.println(i&j);
-        System.out.println();
+        boolValue = true; // 将这个true替换为2或者3，再看看打印结果
+        if (boolValue) System.out.println("Hello, Java!");
+        if (boolValue == true) System.out.println("Hello, JVM!");
 
     }
-    @Test
-    public void test2(){
-        boolean status=true;
-        System.out.println("asdas");
-        if(status){
-            return;
-        }
-        System.out.println("asdasdasd");
-    }
+
 }

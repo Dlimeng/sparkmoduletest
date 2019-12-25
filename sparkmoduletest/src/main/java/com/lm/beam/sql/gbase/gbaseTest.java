@@ -6,6 +6,7 @@ import org.apache.beam.runners.spark.SparkPipelineOptions;
 import org.apache.beam.runners.spark.SparkRunner;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.KvCoder;
+import org.apache.beam.sdk.coders.SerializableCoder;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
 import org.apache.beam.sdk.io.jdbc.JdbcIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -32,7 +34,7 @@ public class gbaseTest {
     private String password="gbase";
     private String driver="com.gbase.jdbc.Driver";
     private Connection conn;
-    private int inNum=10;
+    private int inNum=1000000;
     @Test
     public void save(){
         //conn = getConnection();
@@ -77,7 +79,7 @@ public class gbaseTest {
          * 3000L 82
          * 4096L 84
          */
-        options.setBundleSize(4096L);
+        //options.setBundleSize(4096L);
         Pipeline pipeline = Pipeline.create(options);
 
         List<KV<String, String>> list = new ArrayList<>();
@@ -90,6 +92,8 @@ public class gbaseTest {
             list.add(KV.of(id, name));
         }
 
+
+
         pipeline.apply(Create.of(list))
                 .setCoder(KvCoder.of(StringUtf8Coder.of(),StringUtf8Coder.of()))
                 .apply(JdbcIO.<KV<String,String>>write()
@@ -98,6 +102,54 @@ public class gbaseTest {
                                 create(getDataSource()))
                         .withStatement(sql).withBatchSize(2048L)
                         .withPreparedStatementSetter(new DirectRunnerExamination.PrepareStatementFromRow()));
+
+
+        pipeline.run().waitUntilFinish();
+        long endTime = System.currentTimeMillis();
+        System.out.println("插入数据用时：" + (endTime - startTime) / 1000 + " 秒");
+    }
+
+    @Test
+    public void testSparkRunner2(){
+        long startTime = System.currentTimeMillis();
+        SparkPipelineOptions options = PipelineOptionsFactory.fromArgs("").as(SparkPipelineOptions.class);
+        options.setRunner(SparkRunner.class);
+        options.setSparkMaster("local[*]");
+
+        Pipeline pipeline = Pipeline.create(options);
+
+        List<BatchTestObject> list = new ArrayList<>();
+
+        String sql="insert into batch_test(id, name, createtime, updatetime, `desc`, money1, money2, word, age) values(?,?,?,?,?,?,?,?,?)";
+        BatchTestObject batchTestObject=null;
+        for (int i = 1; i <= inNum; i++) {
+            batchTestObject =new BatchTestObject();
+            batchTestObject.setId(i);
+
+            String name="name"+i;
+            batchTestObject.setName(name);
+            batchTestObject.setCreatetime(new Date());
+            batchTestObject.setUpdatetime(new Date());
+            batchTestObject.setDesc("desc:"+i);
+            batchTestObject.setMoney1(0.11);
+            BigDecimal bigDecimal = new BigDecimal(10);
+            batchTestObject.setMoney2(bigDecimal);
+            batchTestObject.setWord("word:"+i);
+            batchTestObject.setAge(i);
+            list.add(batchTestObject);
+        }
+
+
+        pipeline.apply(Create.of(list))
+                .setCoder(SerializableCoder.of(BatchTestObject.class))
+                .apply(JdbcIO.<BatchTestObject>write()
+                        .withDataSourceConfiguration(JdbcIO.
+                                DataSourceConfiguration.
+                                create(getDataSource()))
+                        .withStatement(sql).withBatchSize(2048L)
+                        .withPreparedStatementSetter(new gbaseTest.PrepareStatementFromRow()));
+
+
 
 
         pipeline.run().waitUntilFinish();
@@ -134,4 +186,21 @@ public class gbaseTest {
         cpds.setPassword(password);
         return cpds;
     }
+
+    public static class PrepareStatementFromRow implements JdbcIO.PreparedStatementSetter<BatchTestObject>{
+        @Override
+        public void setParameters(BatchTestObject element, PreparedStatement ps) throws Exception {
+
+            ps.setInt(1,element.getId());
+            ps.setString(2,element.getName());
+            ps.setTimestamp(3,new Timestamp(element.getCreatetime().getTime()));
+            ps.setTimestamp(4,new Timestamp(element.getUpdatetime().getTime()));
+            ps.setString(5,element.getDesc());
+            ps.setDouble(6,element.getMoney1());
+            ps.setBigDecimal(7,element.getMoney2());
+            ps.setString(8,element.getWord());
+            ps.setInt(9,element.getAge());
+        }
+    }
+
 }

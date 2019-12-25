@@ -228,8 +228,6 @@ public class Neo4jIO {
         private Value processRecord(final T record) {
             try {
                 if(record instanceof Neo4jObject){
-                    Map<String, Object> parMap = ((Neo4jObject) record).getParMap();
-                    Object[] objects = ((Neo4jObject) record).getObjects();
                     Object[] objectValue = ((Neo4jObject) record).getObjectValue();
                     return parameters(objectValue);
                 }

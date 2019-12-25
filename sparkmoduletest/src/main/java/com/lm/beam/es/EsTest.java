@@ -23,6 +23,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
+import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import org.joda.time.Duration;
@@ -42,7 +43,7 @@ import java.util.regex.Pattern;
  * @Date: 2019/9/4 14:46
  */
 public class EsTest implements Serializable {
-    @Test
+
     public void testRead(){
         PipelineOptions options = PipelineOptionsFactory.create();
         // 显式指定PipelineRunner：DirectRunner（Local模式）
@@ -58,27 +59,27 @@ public class EsTest implements Serializable {
         pipeline.run();
     }
 
-    @Test
+
     public void testRead2() throws IOException {
 
-        String ip="192.168.100.102";
-        int port=9210;
-        RestClient restClient = RestClient.builder(new HttpHost(ip, port)).setMaxRetryTimeoutMillis(6000).build();
-        String query = "{\"query\": { \"match_all\": {} }}";
-        HttpEntity queryEntity = new NStringEntity(query, ContentType.APPLICATION_JSON);
-        /**
-         * kd-test
-         * my-type
-         */
-        String endPoint =
-                String.format(
-                        "/%s/%s/_search",
-                        "kg.group_20190907",
-                        "_doc");
-        Map<String, String> params = new HashMap<>();
-        Response response = restClient.performRequest("GET", endPoint, params, queryEntity);
-        InputStream content = response.getEntity().getContent();
-        stringStream(content);
+//        String ip="192.168.100.102";
+//        int port=9210;
+//        RestClient restClient = RestClient.builder(new HttpHost(ip, port)).setMaxRetryTimeoutMillis(6000).build();
+//        String query = "{\"query\": { \"match_all\": {} }}";
+//        HttpEntity queryEntity = new NStringEntity(query, ContentType.APPLICATION_JSON);
+//        /**
+//         * kd-test
+//         * my-type
+//         */
+//        String endPoint =
+//                String.format(
+//                        "/%s/%s/_search",
+//                        "kg.group_20190907",
+//                        "_doc");
+//        Map<String, String> params = new HashMap<>();
+//        Response response = restClient.performRequest("GET", endPoint, params, queryEntity);
+//        InputStream content = response.getEntity().getContent();
+//        stringStream(content);
 
     }
 
@@ -103,10 +104,11 @@ public class EsTest implements Serializable {
 
 
         String sql="{\"ids\":\"3\",\"username\":\"测试测试2\",\"tag_list\":[{\"score\": 600,\"title\": \"title6\"},{\"score\": 500,\"title\": \"title5\"}]}";
-        String value="[{\"score\": 600,\"title\": \"title6\"},{\"score\": 500,\"title\": \"title5\"}";
+      // String value="[{\"score\": 600,\"title\": \"title6\"},{\"score\": 500,\"title\": \"title5\"}";
 
-//        pipeline.apply(Create.of(sql)).apply(ElasticsearchIO.write().withConnectionConfiguration( ElasticsearchIO
-//                .ConnectionConfiguration.create(new String[]{"http://192.168.100.102:9210"}, "kd-test", "my-type")));
+        pipeline.apply(Create.of(sql)).apply(ElasticsearchIO.write().withConnectionConfiguration( ElasticsearchIO
+                .ConnectionConfiguration.create(new String[]{"http://192.168.20.118:9200"}, "kd-test", "_doc")).withIdFn(new FieldValueExtractFnID()));
+
         pipeline.run().waitUntilFinish();
     }
 
@@ -129,19 +131,37 @@ public class EsTest implements Serializable {
      * @throws Exception
      */
     @Test
-    public void createDocument() throws Exception {
+    public void createDocument2() throws Exception {
         RestClient restClient = RestClient.builder(
-                new HttpHost("192.168.100.102", 9210, "http")).build();
+                new HttpHost("192.168.20.118", 9200, "http")).build();
 
         String method = "POST";
-        String endpoint = "/kd-test/my-type/_bulk";
-        String sql="{\"id\":3,\"username\":\"测试测试\",\"description\":\"测试测试\"}";
+        String endpoint = "/kd-test/_doc/_bulk";
+        String sql="{\"id\":4,\"username\":\"测试测试\",\"description\":\"测试测试\"}\\r\\n{\"id\":5,\"username\":\"测试测试\",\"description\":\"测试测试\"}\\r\\n";
         // JSON格式字符串
         HttpEntity entity = new NStringEntity(sql, ContentType.APPLICATION_JSON);
-        Response response = restClient.performRequest(method, endpoint, Collections.emptyMap(), entity);
+        Request request = new Request(method, endpoint);
+        request.setEntity(entity);
+        Response response = restClient.performRequest(request);
+        //Response response = restClient.performRequest(method, endpoint, Collections.emptyMap(), entity);
         System.out.println(EntityUtils.toString(response.getEntity()));
         // 返回结果：
         // {"_index":"book","_type":"novel","_id":"1","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":0,"_primary_term":1}
+    }
+
+
+    public void createDocument()  throws Exception {
+       //192.168.100.102
+//
+//        RestClient restClient = RestClient.builder(
+//                new HttpHost("192.168.100.102", 9210, "http")).build();
+//        String method = "POST";
+//        String endpoint = "/kd-test/my-type/_bulk";
+//        String sql="{\"id\":3,\"username\":\"测试测试\",\"description\":\"测试测试\"}";
+//        // JSON格式字符串
+//        HttpEntity entity = new NStringEntity(sql, ContentType.APPLICATION_JSON);
+//        Response response = restClient.performRequest(method, endpoint, Collections.emptyMap(), entity);
+//        System.out.println(EntityUtils.toString(response.getEntity()));
     }
 
 
@@ -153,6 +173,11 @@ public class EsTest implements Serializable {
             c.output(c.element());
         }
     }
-
+    public static class FieldValueExtractFnID implements ElasticsearchIO.Write.FieldValueExtractFn{
+        @Override
+        public String apply(JsonNode input) {
+            return input.path("ids").asText();
+        }
+    }
 
 }
