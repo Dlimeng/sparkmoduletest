@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.beans.PropertyVetoException;
 import java.io.Serializable;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,10 +59,51 @@ public class hiveSelect implements Serializable {
     public void testRead2() throws PropertyVetoException {
         ComboPooledDataSource cpds = new ComboPooledDataSource();
         cpds.setDriverClass(driverName);
-        cpds.setJdbcUrl("jdbc:hive2://192.168.20.117:10000/default");
+        cpds.setJdbcUrl("jdbc:hive2://192.168.200.117:10000/default");
         cpds.setUser("hive");
         cpds.setPassword("hive");
+
+        try {
+            Connection connection = cpds.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement("select count(1) from kd_swap.oldtable1");
+             ResultSet resultSet = preparedStatement.executeQuery();
+             while (resultSet.next()){
+                 String num = resultSet.getString(1);
+                 System.out.println(num);
+             }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
+
+    @Test
+    public void testRead3() throws PropertyVetoException {
+        ComboPooledDataSource cpds = new ComboPooledDataSource();
+        cpds.setDriverClass(driverName);
+        cpds.setJdbcUrl("jdbc:hive2://192.168.200.117:10000/default");
+        cpds.setUser("hive");
+        cpds.setPassword("hive");
+
+        try {
+            Connection connection = cpds.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement("show databases");
+            ResultSet resultSet = preparedStatement.executeQuery();
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            System.out.println(metaData.getColumnCount());
+
+            while (resultSet.next()){
+                String num = resultSet.getString(1);
+                System.out.println(num);
+            }
+
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
 
 
     @Test

@@ -159,6 +159,8 @@ public class SftpTest {
     public void listFiles(String directory){
         try {
             Vector ls = channel.ls(directory);
+            final boolean empty = ls.isEmpty();
+            System.out.println("isempty:"+empty);
             ls.forEach(f->{
                 System.out.println(f.toString());
             });
@@ -184,9 +186,11 @@ public class SftpTest {
 
     public static void main(String[] args) {
         SftpTest sftpTest = new SftpTest();
-        sftpTest.upload("D:/beam.txt","/beam.txt");
+       // sftpTest.upload("D:/beam.txt","/beam.txt");
         ///data/sftp-test/limeng
        // sftpTest.listFiles("/data/sftp-test/limeng");
+       // sftpTest.listFiles("/data/tmp/test.txt");
+        sftpTest.delete("/data/tmp","test.txt");
     }
 
 }
