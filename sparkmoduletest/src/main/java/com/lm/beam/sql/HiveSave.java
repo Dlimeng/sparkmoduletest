@@ -64,10 +64,10 @@ public class HiveSave implements Serializable {
 //        cpds.setUser("root");
 //        cpds.setPassword("root");
         cpds.setDriverClass(driverName);
-        cpds.setJdbcUrl("jdbc:hive2://192.168.20.117:10000/default");
+        cpds.setJdbcUrl("jdbc:hive2://192.168.200.117:10000/default");
         cpds.setUser("hive");
         cpds.setPassword("hive");
-        String sql="insert into test2019(name,id) values(\"21\",\"22\")";
+        String sql="insert into db_test.test(name,id) values(\"21\",\"22\")";
 //        Connection connection = cpds.getConnection();
 //        PreparedStatement preparedStatement = connection.prepareStatement("insert into test2019(name,id) values(\"122\",\"123\")");
 //        preparedStatement.executeUpdate();
@@ -92,10 +92,10 @@ public class HiveSave implements Serializable {
     public void testSave() throws PropertyVetoException, SQLException {
         ComboPooledDataSource cpds = new ComboPooledDataSource();
         cpds.setDriverClass(driverName);
-        cpds.setJdbcUrl("jdbc:hive2://192.168.20.117:10000/default");
+        cpds.setJdbcUrl("jdbc:hive2://192.168.200.117:10000/default");
         cpds.setUser("hive");
         cpds.setPassword("hive");
-        String sql="select * from test2019";
+        String sql="select * from db_test.test";
 
         Connection connection = cpds.getConnection();
         PreparedStatement preparedStatement = connection.prepareStatement(sql);
@@ -112,12 +112,13 @@ public class HiveSave implements Serializable {
 
     @Test
     public void testSave2() throws PropertyVetoException, SQLException, ClassNotFoundException, IllegalAccessException, InstantiationException {
-        String url="jdbc:hive2://192.168.20.200:2181,192.168.20.117:2181,192.168.20.116:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2";
+       // String url="jdbc:hive2://192.168.20.200:2181,192.168.20.117:2181,192.168.20.116:2181/;serviceDiscoveryMode=zooKeeper;zooKeeperNamespace=hiveserver2";
+        String url = "jdbc:hive2://192.168.200.117:10000/default";
         String username="hive";
         String passwod="hive";
         Class.forName(driverName).newInstance();
         Connection conn = DriverManager.getConnection(url,username,passwod);
-        String sql="insert into test2019(name,id) values(\"21\",\"31\")";
+        String sql="insert into db_test.test values('id2','21','31')";
         PreparedStatement preparedStatement = conn.prepareStatement(sql);
         preparedStatement.executeUpdate();
         preparedStatement.close();

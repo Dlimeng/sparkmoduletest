@@ -14,6 +14,7 @@ import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
 import org.joda.time.Instant;
 import org.joda.time.format.DateTimeFormat;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -90,13 +91,18 @@ public class TestOptions {
     }
     @Test
     public void testTime(){
-        String time="2019-09-12 16:25:39.0";
-        String[] split = time.split("\\.|\\,");
+//        String time="2019-09-12 16:25:39.0";
+//        String[] split = time.split("\\.|\\,");
+//
+//        int i = time.indexOf("\\.|\\,");
+//        System.out.println(i);
+//        String format="yyyy-MM-dd HH:mm:ss";
+//        Instant parse = Instant.parse(split[0], DateTimeFormat.forPattern(format));
 
-        int i = time.indexOf("\\.|\\,");
-        System.out.println(i);
-        String format="yyyy-MM-dd HH:mm:ss";
-        Instant parse = Instant.parse(split[0], DateTimeFormat.forPattern(format));
+        String token="select * from dwt_mart.company_tmp limit 100";
+
+        String[] split = token.trim().split("\\s+");
+        Assert.assertNotNull(split);
 
     }
 

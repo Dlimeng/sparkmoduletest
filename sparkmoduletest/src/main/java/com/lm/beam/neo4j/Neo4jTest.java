@@ -29,8 +29,8 @@ import static org.neo4j.driver.v1.Values.parameters;
  */
 public class Neo4jTest implements Serializable {
     private Driver createDrive(){
-
-        return GraphDatabase.driver( "bolt://localhost:7687", AuthTokens.basic( "neo4j", "limeng" ));
+//http://192.168.200.9/
+        return GraphDatabase.driver( "bolt://192.168.200.115:7887", AuthTokens.basic( "neo4j", "admin" ));
     }
 
     @Test
@@ -142,6 +142,7 @@ public class Neo4jTest implements Serializable {
         }
     }
 
+
     @Test
     public void testUpdate(){
         try {
@@ -197,6 +198,30 @@ public class Neo4jTest implements Serializable {
 
 
         pipeline.run().waitUntilFinish();
+    }
+
+    @Test
+    public void testQuery(){
+        try {
+            Driver drive = createDrive();
+            Session session = drive.session();
+
+            String sql="MATCH p=(a:AGENCY {agency_id:\"aid1\"})-[r:RELATION]-() RETURN p";
+            StatementResult result = session.run(sql);
+
+            while (result.hasNext()){
+                Record record = result.next();
+                System.out.println(record.get(0).toString());
+            }
+
+
+
+            session.close();
+            drive.close();
+        }catch (Exception e){
+
+        }
+
     }
 
     @Test

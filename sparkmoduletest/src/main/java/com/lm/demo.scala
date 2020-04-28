@@ -22,4 +22,6 @@ object demo {
     val v1 = simhash.calSimhash(content)
     println(v1)
   }
+
+
 }

@@ -1,6 +1,9 @@
 package com.lm.beam.es;
 
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.google.common.collect.Maps;
+import com.lm.beam.es.model.Demo;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -18,16 +21,44 @@ import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.Row;
+import org.apache.hadoop.hbase.filter.FuzzyRowFilter;
+import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
+import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.Request;
 import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.RangeQueryBuilder;
+import org.elasticsearch.search.SearchHit;
+import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.aggregations.Aggregation;
+import org.elasticsearch.search.aggregations.AggregationBuilder;
+import org.elasticsearch.search.aggregations.AggregationBuilders;
+import org.elasticsearch.search.aggregations.BucketOrder;
+import org.elasticsearch.search.aggregations.bucket.terms.ParsedStringTerms;
+import org.elasticsearch.search.aggregations.bucket.terms.TermsAggregationBuilder;
+import org.elasticsearch.search.aggregations.metrics.sum.InternalSum;
+import org.elasticsearch.search.aggregations.metrics.sum.Sum;
+import org.elasticsearch.search.aggregations.metrics.sum.SumAggregationBuilder;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.FieldSortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.joda.time.Duration;
+import org.junit.Assert;
 import org.junit.Test;
+import org.mortbay.jetty.HttpStatus;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -132,23 +163,172 @@ public class EsTest implements Serializable {
      */
     @Test
     public void createDocument2() throws Exception {
-        RestClient restClient = RestClient.builder(
-                new HttpHost("192.168.20.118", 9200, "http")).build();
-
-        String method = "POST";
-        String endpoint = "/kd-test/_doc/_bulk";
-        String sql="{\"id\":4,\"username\":\"测试测试\",\"description\":\"测试测试\"}\\r\\n{\"id\":5,\"username\":\"测试测试\",\"description\":\"测试测试\"}\\r\\n";
-        // JSON格式字符串
-        HttpEntity entity = new NStringEntity(sql, ContentType.APPLICATION_JSON);
-        Request request = new Request(method, endpoint);
-        request.setEntity(entity);
-        Response response = restClient.performRequest(request);
-        //Response response = restClient.performRequest(method, endpoint, Collections.emptyMap(), entity);
-        System.out.println(EntityUtils.toString(response.getEntity()));
+//        RestClient restClient = RestClient.builder(
+//                new HttpHost("192.168.20.118", 9200, "http")).build();
+//
+//        String method = "POST";
+//        String endpoint = "/kd-test/_doc/_bulk";
+//        String sql="{\"id\":4,\"username\":\"测试测试\",\"description\":\"测试测试\"}\\r\\n{\"id\":5,\"username\":\"测试测试\",\"description\":\"测试测试\"}\\r\\n";
+//        // JSON格式字符串
+//        HttpEntity entity = new NStringEntity(sql, ContentType.APPLICATION_JSON);
+//        Request request = new Request(method, endpoint);
+//        request.setEntity(entity);
+//        Response response = restClient.performRequest(request);
+//        //Response response = restClient.performRequest(method, endpoint, Collections.emptyMap(), entity);
+//        System.out.println(EntityUtils.toString(response.getEntity()));
         // 返回结果：
         // {"_index":"book","_type":"novel","_id":"1","_version":1,"result":"created","_shards":{"total":2,"successful":1,"failed":0},"_seq_no":0,"_primary_term":1}
     }
+    @Test
+    public void delete(){
+        String s="--";
+        String name="--";
+        int length = name.trim().length();
+        System.out.println(length);
+    }
 
+    @Test
+    public void save(){
+        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost("192.168.200.118", 9210, "http")));
+
+        IndexRequest request = new IndexRequest("sstest", "_doc","c2");
+        final Demo demo = new Demo();
+        demo.setId("id2");
+        demo.setMony(200.22);
+        String json = JSON.toJSONString(demo);
+        request.source(json,XContentType.JSON);
+        try {
+            client.index(request, new Header[0]);
+        } catch (IOException var5) {
+           var5.printStackTrace();
+        }
+    }
+    @Test
+    public  void querySum(){
+        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost("192.168.200.118", 9210, "http")));
+        SearchRequest searchRequest = new SearchRequest(new String[]{"sstest"});
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+
+
+        SumAggregationBuilder fa = AggregationBuilders.sum("mony").field("mony");
+
+
+        searchSourceBuilder.aggregation(fa);
+
+        searchRequest.source(searchSourceBuilder);
+
+        SearchResponse searchResponse = null;
+        try {
+            searchResponse = client.search(searchRequest);
+            Map<String, Aggregation> subaggmap  = searchResponse.getAggregations().asMap();
+           final double mony = ((Sum) subaggmap.get("mony")).getValue();
+
+            System.out.println(mony);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    @Test
+    public void queryList(){
+
+        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost("192.168.200.18", 9210, "http")));
+        SearchRequest searchRequest = new SearchRequest("chain.agency_label");
+        searchRequest.types("_doc");
+        SearchSourceBuilder searchSourceBuilder =  new SearchSourceBuilder();
+        //查询条件，可以参考官网手册
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        //1581692414897
+        //
+       // searchSourceBuilder.sort(SortBuilders.fieldSort("total_num").order(SortOrder.DESC));
+//        searchSourceBuilder.sort("total_num", SortOrder.DESC);
+//        boolQuery.must(QueryBuilders.termQuery("agency_id", "9A99797A57EF48F1A3ACA610E1E91BD3"));
+
+        RangeQueryBuilder startTime = QueryBuilders.rangeQuery("start_time").from(1547481600000L).to(1547481600000L).includeLower(true).includeUpper(true);
+        boolQuery.filter(startTime);
+        searchSourceBuilder.size(10);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.query(boolQuery);
+
+        searchRequest.source(searchSourceBuilder);
+        try {
+            //查询结果
+            SearchResponse searchResponse = client.search(searchRequest);
+            SearchHits hits = searchResponse.getHits();
+            SearchHit[] searchHits = hits.getHits();
+            for(SearchHit hit : searchHits) {
+                System.out.println(hit.getSourceAsString());
+            }
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void queryList2() throws IOException {
+
+        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost("192.168.200.18", 9210, "http")));
+        SearchRequest searchRequest = new SearchRequest("chain.agency_label");
+        searchRequest.types("_doc");
+        SearchSourceBuilder searchSourceBuilder =  new SearchSourceBuilder();
+
+        BoolQueryBuilder boolQuery = QueryBuilders.boolQuery();
+        //{
+        //  "range" : {
+        //    "start_time" : {
+        //      "from" : 1547481600000,
+        //      "to" : 1547481600000,
+        //      "include_lower" : true,
+        //      "include_upper" : true,
+        //      "boost" : 1.0
+        //    }
+        //  }
+        //}
+        RangeQueryBuilder startTime = QueryBuilders.rangeQuery("start_time").from(1547481600000L).to(1547481600000L).includeLower(true).includeUpper(true);
+
+        boolQuery.must(QueryBuilders.termQuery("agency_id", "98da1f52422d42e1b39dc7737bb60da4"));
+        searchSourceBuilder.size(10);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.query(boolQuery);
+        final SumAggregationBuilder fa = AggregationBuilders.sum("fa").field("financing_amount");
+        searchSourceBuilder.aggregation(fa);
+
+        searchRequest.source(searchSourceBuilder);
+
+        SearchResponse searchResponse = client.search(searchRequest);
+        InternalSum sum= searchResponse.getAggregations().get("fa");
+
+        System.out.println( sum.getValue());
+    }
+
+    @Test
+    public void groupByList() throws IOException {
+        RestHighLevelClient client = new RestHighLevelClient(RestClient.builder(new HttpHost("192.168.200.118", 9210, "http")));
+        SearchRequest searchRequest = new SearchRequest("chain.agency_event");
+        searchRequest.types("_doc");
+        SearchSourceBuilder searchSourceBuilder =  new SearchSourceBuilder();
+
+        AggregationBuilder aggregationBuilder = ((TermsAggregationBuilder)AggregationBuilders.terms("agency_id").field("agency_id")).order(BucketOrder.count(false)).size(100);
+        searchSourceBuilder.aggregation(aggregationBuilder);
+        searchSourceBuilder.from(0);
+        searchSourceBuilder.size(100);
+        searchRequest.source(searchSourceBuilder);
+        SearchResponse searchResponse = client.search(searchRequest, new Header[0]);
+
+        Map<String, Aggregation> aggMap = searchResponse.getAggregations().asMap();
+        if (aggMap != null && aggMap.size() != 0) {
+            Map<String, Long> groupMap = Maps.newHashMapWithExpectedSize(aggMap.size());
+            ParsedStringTerms fieldAgg = (ParsedStringTerms)aggMap.get("agency_id");
+
+            fieldAgg.getBuckets().stream().forEach((d) -> {
+                Long var10000 = (Long)groupMap.put(d.getKeyAsString(), d.getDocCount());
+            });
+            Assert.assertNotNull(groupMap);
+        }
+
+    }
 
     public void createDocument()  throws Exception {
        //192.168.100.102
