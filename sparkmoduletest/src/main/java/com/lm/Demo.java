@@ -3,10 +3,13 @@ package com.lm;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import lombok.Data;
+import org.junit.Test;
 
+import java.io.File;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -108,26 +111,15 @@ public class Demo {
 
        // System.out.println(20971520 >> 7);
         //System.out.println(5<<-10);
-
-        String pathString="file://192.68.20.1/tmp/linkis";
-        String scheme = null;
-        String authority = null;
-        int start = 0;
-        int colon = pathString.indexOf(58);
-        int slash = pathString.indexOf(47);
-        if (colon != -1 && (slash == -1 || colon < slash)) {
-            scheme = pathString.substring(0, colon);
-            start = colon + 1;
+        String name = new File("/aa/aaa/aaa/testshell.sh").getName();
+        System.out.println(name);
+        // String name="testshell.sh";
+        String specialRegEx = "[ _`~!@#$%^&*()+=|{}':;',\\[\\]<>/?~！@#￥%……&*（）——+|{}【】‘；：”“’。，、？]|\n|\r|\t";
+        Pattern specialPattern = Pattern.compile(specialRegEx);
+        if(specialPattern.matcher(name).find()){
+            System.out.println("true");
+            //throw new WorkSpaceException("the path exist special char");
         }
-
-        if (pathString.startsWith("//", start) && pathString.length() - start > 2) {
-            int nextSlash = pathString.indexOf(47, start + 2);
-            int authEnd = nextSlash > 0 ? nextSlash : pathString.length();
-            authority = pathString.substring(start + 2, authEnd);
-            start = authEnd;
-        }
-
-        System.out.println("ccc");
 
     }
 
@@ -150,5 +142,10 @@ public class Demo {
         public void setValue(String value) {
             this.value = value;
         }
+    }
+
+    @Test
+    public void regTest(){
+
     }
 }
