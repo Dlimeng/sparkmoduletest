@@ -70,7 +70,8 @@ object GraphxDemo4 {
       */
     println("edges:")
     val two=2
-    val g1 = g.mapVertices((vid, _) => Map[VertexId, PartitionID](vid -> two))
+    val value: Graph[Map[VertexId, PartitionID], None.type] = g.mapVertices((vid, _) => Map[VertexId, PartitionID](vid -> two))
+    val g1 = value
     g1.edges.collect().foreach(println(_))
 
     /**

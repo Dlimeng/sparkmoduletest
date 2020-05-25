@@ -73,7 +73,9 @@ object GraphxDemo2 {
         (5L, ("zzzfranklin", 50)), (2L, ("zzzistoica", 20))))
 
     println("joinVertices")
+
     val joinVerticesValue = graph.mapVertices((id,attr) => "").joinVertices(users2){(vid,empty,user) =>user._2.toString}
+
     joinVerticesValue.vertices.collect().foreach(println(_))
 
 
