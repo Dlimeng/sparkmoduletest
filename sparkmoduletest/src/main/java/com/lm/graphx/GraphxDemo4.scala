@@ -21,6 +21,7 @@ object GraphxDemo4 {
     * @return
     */
   def vprog(vid:VertexId,vdata:VMap,message:VMap): Map[VertexId,Int] ={
+    println(s"vprog vid:$vid message:$message")
     addMaps(vdata,message)
   }
 
@@ -31,7 +32,16 @@ object GraphxDemo4 {
     }).toMap
   }
 
+  def merMaps(spmap1:VMap,spmap2:VMap): VMap ={
+    println("merMaps")
+    val ids: Set[VertexId] = spmap1.keySet++spmap2.keySet
+    ids.map(k=>{
+      k ->math.min(spmap1.getOrElse(k,Int.MaxValue),spmap2.getOrElse(k,Int.MaxValue))
+    }).toMap
+  }
+
   def sendMsg(e:EdgeTriplet[VMap,_]):Iterator[(VertexId,Map[VertexId,Int])] ={
+
     //两个集合的差集
     val srcMap = (e.dstAttr.keySet -- e.srcAttr.keySet).map(k=>{k->(e.dstAttr(k)-1)}).toMap
     val dstMap = (e.srcAttr.keySet -- e.dstAttr.keySet).map(k=>{k->(e.srcAttr(k)-1)}).toMap
@@ -113,13 +123,13 @@ object GraphxDemo4 {
       *     //第二轮迭代，收到消息的节点会再一次的沿着边发送消息，此时消息的内容变成了（自己的朋友，0）
       *    //第三个函数 addMaps, 是合并消息，将map合并（相当于求个并集），不过如果有交集（key相同），那么，交集中的key取值（value）为最小的值。
       */
-    val newG=g1.pregel(Map[VertexId,Int](),two,EdgeDirection.Out)(vprog,sendMsg,addMaps)
+    val newG=g1.pregel(Map[VertexId,Int](),two,EdgeDirection.Out)(vprog,sendMsg,merMaps)
     println("newG vertices")
     newG.vertices.collect().foreach(println(_))
-    println()
-    println("twoJumpFirends vertices")
-    val twoJumpFirends: VertexRDD[Iterable[VertexId]] = newG.vertices.mapValues(_.filter(_._2 == 0).keys)
-    twoJumpFirends.collect().foreach(println(_))
+//    println()
+//    println("twoJumpFirends vertices")
+//    val twoJumpFirends: VertexRDD[Iterable[VertexId]] = newG.vertices.mapValues(_.filter(_._2 == 0).keys)
+//    twoJumpFirends.collect().foreach(println(_))
 
   }
 

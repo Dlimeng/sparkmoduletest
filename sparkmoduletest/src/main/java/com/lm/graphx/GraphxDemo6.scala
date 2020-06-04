@@ -175,7 +175,7 @@ object GraphxDemo6 {
     ccGraph.vertices.collect().foreach(println(_))
 
     val graph6: Graph[node, Int] = graph5.mapVertices((id, attr) => {
-      node(attr, id, 0)
+      node(attr,List(id))
     })
 
 
@@ -203,36 +203,14 @@ object GraphxDemo6 {
 
 //    graph6.vertices.collect().foreach(println(_))
 
-    val pathGraph2: Graph[node, Int] = graph6.pregel(node(Int.MaxValue, 0, 0), Int.MaxValue)((id, v, a) => {
-      println(s"vprog  v:$v  a:$a")
-      node(math.min(v.value, a.value), id, a.toId)
-    },
-      triplet => {
-        //如果三元组边权重+入口的值小于目的的值，那么发送消息
-        if (triplet.srcAttr.value != Int.MaxValue && triplet.srcAttr.value + triplet.attr < triplet.dstAttr.value) {
-          println(s"${triplet.srcAttr}--${triplet.attr}--${triplet.dstAttr}")
-          Iterator(triplet.dstId, node(triplet.srcAttr.value + triplet.attr, triplet.srcId, triplet.dstId)).asInstanceOf[Iterator[(Long, node)]]
-        } else {
-          Iterator.empty
-        }
-      }, (a, b) => {
-        println(s"mergeMsg  b:$b  a:$a")
-        node(math.min(a.value,b.value),a.fromId,a.toId)
-      }
-    )
 
-    pathGraph2.triplets.collect().foreach( triplet =>
-          println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} ")
-        )
-
-    println(pathGraph2.vertices.collect.mkString("\t"))
 
   }
 
 
 }
-case class node(value:Int,fromId:Long,toId:Long){
+case class node(value:Int,ids:List[Long]){
   override def toString: String = {
-    s"value:$value,fromId:$fromId,toId:$toId"
+    s"value:$value"
   }
 }

@@ -55,7 +55,14 @@ object GraphxDemo7 {
     graph2.edges.collect().foreach(println(_))
     graph2.vertices.collect().foreach(println(_))
     println("pageRank join:")
-    graph2.vertices.join(vertexValue).collect().foreach(println(_))
+    graph2.joinVertices(vertexValue)((vid,vd,ud)=>{
+      vd
+    }).vertices.collect().foreach(println(_))
+
+    graph2.joinVertices(vertexValue)((vid,vd,ud)=>{
+      vd
+    }).edges.collect().foreach(println(_))
+   // graph2.vertices.join(vertexValue).collect().foreach(println(_))
 
     /**
       * 1.pagerank 当一个顶点只有入度没有出度时将不断吞噬掉该有向图其他顶点的PR值，最终使得所有顶点pr值都变成0
