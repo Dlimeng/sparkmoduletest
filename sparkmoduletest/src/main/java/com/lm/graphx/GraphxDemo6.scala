@@ -88,6 +88,13 @@ object GraphxDemo6 {
 
     val graph4: Graph[(String, Int), String]  = Graph(vertexRDD4,edgesRDD4)
 
+    println("原貌：")
+    graph3.triplets.collect().foreach(triplet=>{
+              println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr} --edge=${triplet.attr} --dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} ")
+          })
+
+    println("aggregateMessages:")
+
     /**
       * 聚合到尾结点，去在所有起始节点找最大
       */
@@ -95,26 +102,27 @@ object GraphxDemo6 {
       triplet.sendToDst(triplet.srcAttr._2)
     },
       (a, b) => math.max(a, b))
-    println("aggregateMessages:")
+
     graph3Value.collect().foreach(println(_))
 
+
     println("joinVertices:")
-    val joinVerticesvalue: Graph[(String, Int), String] = graph3.joinVertices(vertexRDD4)((v, vd, u) => {
-      println("vd:" + vd._1 + " " + vd._2)
+    graph3.joinVertices(vertexRDD4)((v, vd, u) => {
       (u._1, u._2)
+    }).triplets.collect().foreach(triplet=>{
+      println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr} --edge=${triplet.attr} --dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} ")
     })
 
-    joinVerticesvalue.vertices.collect().foreach(println(_))
-    joinVerticesvalue.edges.collect().foreach(println(_))
+
 
     println("outerJoinVertices:")
-    val outerJoinVerticesvalue: Graph[(String, Int), String] =graph3.outerJoinVertices(vertexRDD4)((v, vd, u) => {
-      println("vd:" + vd._1 + " " + vd._2)
+    graph3.outerJoinVertices(vertexRDD4)((v, vd, u) => {
       u.getOrElse(null)
+    }).triplets.collect().foreach(triplet=>{
+      println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr} --edge=${triplet.attr} --dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} ")
     })
 
-    outerJoinVerticesvalue.vertices.collect().foreach(println(_))
-    outerJoinVerticesvalue.edges.collect().foreach(println(_))
+
 
     println("Pregel:")
 
