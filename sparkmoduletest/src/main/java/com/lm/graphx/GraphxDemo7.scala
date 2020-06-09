@@ -52,8 +52,9 @@ object GraphxDemo7 {
       */
 
     val graph2: Graph[Double, Double] = graph1.pageRank(0.0001)
-    graph2.edges.collect().foreach(println(_))
-    graph2.vertices.collect().foreach(println(_))
+    graph2.triplets
+      .collect
+      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
     println("pageRank join:")
     graph2.joinVertices(vertexValue)((vid,vd,ud)=>{
       vd

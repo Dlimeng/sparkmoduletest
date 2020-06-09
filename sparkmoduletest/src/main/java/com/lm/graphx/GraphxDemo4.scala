@@ -21,7 +21,6 @@ object GraphxDemo4 {
     * @return
     */
   def vprog(vid:VertexId,vdata:VMap,message:VMap): Map[VertexId,Int] ={
-    println(s"vprog vid:$vid message:$message")
     addMaps(vdata,message)
   }
 
@@ -33,7 +32,6 @@ object GraphxDemo4 {
   }
 
   def merMaps(spmap1:VMap,spmap2:VMap): VMap ={
-    println("merMaps")
     val ids: Set[VertexId] = spmap1.keySet++spmap2.keySet
     ids.map(k=>{
       k ->math.min(spmap1.getOrElse(k,Int.MaxValue),spmap2.getOrElse(k,Int.MaxValue))
@@ -127,9 +125,9 @@ object GraphxDemo4 {
     println("newG vertices")
     newG.vertices.collect().foreach(println(_))
 //    println()
-//    println("twoJumpFirends vertices")
-//    val twoJumpFirends: VertexRDD[Iterable[VertexId]] = newG.vertices.mapValues(_.filter(_._2 == 0).keys)
-//    twoJumpFirends.collect().foreach(println(_))
+    println("twoJumpFirends vertices")
+    val twoJumpFirends: VertexRDD[Iterable[VertexId]] = newG.vertices.mapValues(_.filter(_._2 == 0).keys).filter(!_._2.isEmpty)
+    twoJumpFirends.collect().foreach(println(_))
 
   }
 

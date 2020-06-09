@@ -1,6 +1,6 @@
 package com.lm.graphx.algorithm
 
-import org.apache.spark.graphx._
+import org.apache.spark.graphx.{lib, _}
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -8,6 +8,7 @@ import org.apache.spark.sql.SparkSession
   * @Description TODO
   * @Date 2020/6/4 16:31
   * @Created by limeng
+  *   社区算法标签传播
   */
 object GraphxDemo11 {
   def main(args: Array[String]): Unit = {

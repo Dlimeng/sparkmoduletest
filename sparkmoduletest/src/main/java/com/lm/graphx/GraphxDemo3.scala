@@ -1,7 +1,7 @@
 package com.lm.graphx
 
-import org.apache.spark.graphx.{Graph, VertexId}
-import org.apache.spark.graphx.util.GraphGenerators
+import org.apache.spark.graphx._
+import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
 /**
@@ -17,23 +17,39 @@ object GraphxDemo3 {
     val session = SparkSession.builder.master("local[*]")
       .appName("test1").getOrCreate()
     val sc = session.sparkContext
-    val graph: Graph[Long, Double] = GraphGenerators.logNormalGraph(sc,numVertices = 3).mapEdges(e=>e.attr.toDouble)
 
-    val sourceId:VertexId = 0
 
-    println("graph")
-    println("vertices:")
-    graph.vertices.collect().foreach(println(_))
-    println("edges:")
-    graph.edges.collect().foreach(println(_))
-    println()
+    val vertexRDD4:RDD[(VertexId,Int)] = sc.makeRDD(Array(
+      (1L,0),
+      (2L,Int.MaxValue),
+      (3L,Int.MaxValue),
+      (4L,Int.MaxValue),
+      (5L,Int.MaxValue),
+      (6L,Int.MaxValue),
+      (7L,Int.MaxValue),
+      (8L,Int.MaxValue),
+      (9L,Int.MaxValue)
+    ))
+    val edgesRDD4 = sc.makeRDD(Array(
+      Edge(1L,2L,6),
+      Edge(1L,3L,3),
+      Edge(1L,4L,1),
+      Edge(3L,2L,2),
+      Edge(3L,4L,2),
+      Edge(2L,5L,1),
+      Edge(5L,4L,6),
+      Edge(5L,6L,4),
+      Edge(6L,5L,10),
+      Edge(5L,7L,3),
+      Edge(5L,8L,6),
+      Edge(4L,6L,10),
+      Edge(6L,7L,2),
+      Edge(7L,8L,4),
+      Edge(9L,5L,2),
+      Edge(9L,8L,3)
+    ))
 
-    val initialGraph:Graph[Double, Double] = graph.mapVertices((id, _) => if(id == sourceId) 0.0 else Double.PositiveInfinity)
-    println("initialGraph:")
-    println("vertices:")
-    initialGraph.vertices.collect().foreach(println(_))
-    println("edges:")
-    initialGraph.edges.collect.foreach(println)
+    val graph4 = Graph(vertexRDD4,edgesRDD4)
     /**
       * 第一个参数是 初始消息，面向所有节点，使用一次vprog来更新节点的值
       * 第二迭代次数
@@ -43,10 +59,10 @@ object GraphxDemo3 {
       * 第三个函数 合并
       *
       */
-    val sssp = initialGraph.pregel(Double.PositiveInfinity)(
+    val sssp = graph4.pregel(Int.MaxValue)(
       (id, dist, newDist) => math.min(dist, newDist), // Vertex Program
       triplet => { // Send Message
-        if (triplet.srcAttr + triplet.attr < triplet.dstAttr) {
+        if (triplet.srcAttr!= Int.MaxValue && triplet.srcAttr + triplet.attr < triplet.dstAttr) {
           Iterator((triplet.dstId, triplet.srcAttr + triplet.attr))
         } else {
           Iterator.empty
@@ -55,12 +71,11 @@ object GraphxDemo3 {
       (a, b) => math.min(a, b) // Merge Message
     )
 
-    println();
+
     println("sssp:");
-    println("vertices:");
-    println(sssp.vertices.collect.mkString("\n"))
-    println("edges:");
-    sssp.edges.collect.foreach(println)
+    sssp.triplets
+        .collect
+        .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
 
 
   }
