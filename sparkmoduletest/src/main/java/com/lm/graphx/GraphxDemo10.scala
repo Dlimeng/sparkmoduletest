@@ -27,6 +27,7 @@ object GraphxDemo10 {
     g.stronglyConnectedComponents(200).triplets
       .collect
       .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
+
     println("connectedComponents:")
     g.connectedComponents().triplets
       .collect

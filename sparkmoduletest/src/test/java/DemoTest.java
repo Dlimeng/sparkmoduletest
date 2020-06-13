@@ -14,15 +14,34 @@ public class DemoTest {
 //        if (boolValue == true) System.out.println("Hello, JVM!");
 
 
-        LinkedList<String> strings = new LinkedList<>();
+//        LinkedList<String> strings = new LinkedList<>();
+//
+//        strings.add(0,"test1");
+//        strings.add(0,"test2");
+//        strings.add(0,"test3");
+//
+//        System.out.println(strings);
 
-        strings.add(0,"test1");
-        strings.add(0,"test2");
-        strings.add(0,"test3");
+        System.out.println("main start");
+        Thread thread = new Thread(new TestThread());
+        thread.start();
 
-        System.out.println(strings);
+        System.out.println("main end");
     }
 
 
+    static class TestThread implements Runnable{
+
+        @Override
+        public void run() {
+            System.out.println("test start");
+            try {
+                new Object().wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("test end");
+        }
+    }
 
 }

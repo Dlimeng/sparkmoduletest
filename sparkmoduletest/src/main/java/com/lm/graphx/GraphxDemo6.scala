@@ -178,7 +178,7 @@ object GraphxDemo6 {
 
     val ccGraph  = graph5.connectedComponents()
     println("连通图 edges:")
-    ccGraph.edges.collect().foreach(println(_))
+   // ccGraph.edges.collect().foreach(println(_))
     println("连通图 vertices:")
     ccGraph.vertices.collect().foreach(println(_))
 
@@ -191,25 +191,27 @@ object GraphxDemo6 {
 //    /**
 //      * 单源最短
 //      */
-//    val pathGraph: Graph[Int, Int] = graph5.pregel[Int](Int.MaxValue)(vprog,triplet=>{
-//      //如果三元组的边的权重+入口的值小于目的的值，那么就发送消息，反之不发送
-//      if(triplet.srcAttr!= Int.MaxValue && triplet.srcAttr+triplet.attr<triplet.dstAttr){
-//        println(s"id:${triplet.srcId} --dsid:${triplet.dstId} -- ${triplet.srcAttr}--${triplet.attr}--${triplet.dstAttr}")
-//        Iterator((triplet.dstId,triplet.srcAttr+triplet.attr))
-//      }else{
-//        //不发送消息
-//        Iterator.empty
-//      }
-//    },mergeMsg)
-//    val r1 = pathGraph.triplets.collect()
-//
+    val pathGraph: Graph[Int, Int] = graph5.pregel[Int](Int.MaxValue)( vprog = (vid,a,b) =>math.min(a,b),triplet=>{
+      //如果三元组的边的权重+入口的值小于目的的值，那么就发送消息，反之不发送
+      if(triplet.srcAttr!= Int.MaxValue && triplet.srcAttr+triplet.attr<triplet.dstAttr){
+        //println(s"id:${triplet.srcId} --dsid:${triplet.dstId} -- ${triplet.srcAttr}--${triplet.attr}--${triplet.dstAttr}")
+        Iterator((triplet.dstId,triplet.srcAttr+triplet.attr))
+      }else{
+        //不发送消息
+        Iterator.empty
+      }
+    },(a,b)=>math.min(a,b))
+    val r1 = pathGraph.triplets.collect()
+
 //    r1.foreach( triplet =>
 //      println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} ")
 //    )
-//
-//    println(pathGraph.vertices.collect.mkString("\t"))
 
-//    graph6.vertices.collect().foreach(println(_))
+    //println(pathGraph.vertices.collect.mkString("\t"))
+
+    println("vertices")
+
+    pathGraph.vertices.collect().foreach(println(_))
 
 
 

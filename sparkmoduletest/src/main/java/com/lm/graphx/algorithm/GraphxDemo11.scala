@@ -23,7 +23,12 @@ object GraphxDemo11 {
     ,Edge(7L,8L,""),Edge(8L,5L,""),Edge(5L,7L,""),Edge(6L,8L,"") ))
 
     //社区算法标签传播
-    lib.LabelPropagation.run(Graph(v,e),5).vertices.collect().foreach(println(_))
+   // lib.LabelPropagation.run(Graph(v,e),5).vertices.collect().foreach(println(_))
+
+    val graph = Graph(v,e)
+    graph.mapVertices((vid,_)=>{
+
+    })
 
 
     session.stop()
