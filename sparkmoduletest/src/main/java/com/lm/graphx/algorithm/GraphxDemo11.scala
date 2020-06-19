@@ -25,11 +25,12 @@ object GraphxDemo11 {
     //社区算法标签传播
    // lib.LabelPropagation.run(Graph(v,e),5).vertices.collect().foreach(println(_))
 
-    val graph = Graph(v,e)
-    graph.mapVertices((vid,_)=>{
+//    val graph = Graph(v,e)
+//    graph.mapVertices((vid,_)=>{
+//
+//    })
 
-    })
-
+    v.zipWithUniqueId().collect().foreach(println(_))
 
     session.stop()
   }

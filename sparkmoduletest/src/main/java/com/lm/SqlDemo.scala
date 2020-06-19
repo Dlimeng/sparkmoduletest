@@ -24,10 +24,16 @@ object SqlDemo {
     import spark.sql
 
     //todo:2、操作sql语句
-    sql("CREATE TABLE IF NOT EXISTS person (id int, name string, age int) row format delimited fields terminated by ' '")
-    sql("LOAD DATA LOCAL INPATH 'D://data/p.txt' INTO TABLE person")
-    sql("select * from person ").show()
+//    sql("CREATE TABLE IF NOT EXISTS person (id int, name string, age int) row format delimited fields terminated by ' '")
+//    sql("LOAD DATA LOCAL INPATH 'D://data/p.txt' INTO TABLE person")
+//    sql("select * from person ").show()
+
+
+
+
+
     spark.stop()
+
 
   }
 }

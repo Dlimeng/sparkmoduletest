@@ -8,6 +8,7 @@ import org.apache.beam.sdk.coders.Coder;
 import org.apache.beam.sdk.io.hadoop.WritableCoder;
 import org.apache.beam.sdk.io.hcatalog.HCatalogIO;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
+import org.apache.beam.sdk.schemas.Schema;
 import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.ParDo;
@@ -28,6 +29,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @Author: limeng
@@ -161,4 +164,47 @@ public class hiveSelect implements Serializable {
             c.output(element);
         }
     }
+
+
+
+    @Test
+    public void getSchemaLabel() throws Exception {
+//        ComboPooledDataSource cpds = new ComboPooledDataSource();
+//        cpds.setDriverClass(driverName);
+//        cpds.setJdbcUrl("jdbc:hive2://192.168.200.117:10000/default");
+//        cpds.setUser("hdfs");
+//        cpds.setPassword("hdfs");
+//
+//        Connection connection = cpds.getConnection();
+//        String sql="show create table dwt_mart.dwt_rel_inf_c00_cr";
+//
+//        PreparedStatement ps = connection.prepareStatement(sql);
+//        ResultSet resultSet = ps.executeQuery();
+//
+//        ResultSetMetaData metaData = resultSet.getMetaData();
+//        int columnCount = metaData.getColumnCount();
+//        if(columnCount > 0) {
+//            String columnLabel1 = metaData.getColumnLabel(1);
+//            String columnLabel2 = metaData.getColumnLabel(2);
+//
+//            while (resultSet.next()) {
+//                String name = resultSet.getString(columnLabel1);
+//                String type = resultSet.getString(columnLabel2);
+//
+//                System.out.println("name:"+name+ " type:"+type);
+//            }
+//        }
+
+        checkStr();
+    }
+
+    public void checkStr(){
+        String str="# asdasdasdas";
+        String rex="[#]";
+        Pattern compile = Pattern.compile(rex);
+        Matcher matcher = compile.matcher(str);
+        boolean b = matcher.find();
+        System.out.println(b);
+    }
+
 }
