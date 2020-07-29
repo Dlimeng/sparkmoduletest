@@ -24,11 +24,9 @@ import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
 import java.beans.PropertyVetoException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 /**
  * @Author: limeng
@@ -647,25 +645,37 @@ public class MysqlSelect {
         cpds.setUser("root");
         cpds.setPassword("root");
 
-        String sql="insert into test2(id,`name`,version) values(?,?,?)";
+        String sql="insert into test2(id,`name`,age) values(?,?,?)";
 
         Connection connection = cpds.getConnection();
         connection.setAutoCommit(false);
         PreparedStatement ps = connection.prepareStatement(sql);
-        for (int i = 0; i < 10000; i++) {
 
-            ps.setString(1,"id"+i);
-            ps.setString(2,"name"+i);
-            ps.setString(3,"version"+i);
-            ps.addBatch();
-            if(i!=0 && i % 1000 == 0){
-                ps.executeBatch();
-                connection.commit();
-                ps.clearBatch();
-            }
-        }
-        ps.executeBatch();
-        connection.commit();
+        ResultSetMetaData metaData = ps.getMetaData();
+        ParameterMetaData parameterMetaData = ps.getParameterMetaData();
+        parameterMetaData.getParameterType(0);
+        parameterMetaData.getParameterType(1);
+        parameterMetaData.getParameterType(2);
+
+        parameterMetaData.getParameterTypeName(0);
+        parameterMetaData.getParameterTypeName(1);
+        parameterMetaData.getParameterTypeName(2);
+        System.out.println("ccc");
+
+//        for (int i = 0; i < 10000; i++) {
+//
+//            ps.setString(1,"id"+i);
+//            ps.setString(2,"name"+i);
+//            ps.setString(3,"version"+i);
+//            ps.addBatch();
+//            if(i!=0 && i % 1000 == 0){
+//                ps.executeBatch();
+//                connection.commit();
+//                ps.clearBatch();
+//            }
+//        }
+//        ps.executeBatch();
+//        connection.commit();
         ps.close();
         connection.close();
 

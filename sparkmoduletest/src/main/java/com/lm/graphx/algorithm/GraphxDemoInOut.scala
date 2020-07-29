@@ -23,9 +23,9 @@ object GraphxDemoInOut {
     val graph = Graph.fromEdges(edgeVal,1)
 
 
-    val pregelValue = graph.mapVertices((id, _) => {
-      InAndOut(List(FromInfo(id, 100d)), List[FromInfo]())
-    }).pregel(List[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
+//    val pregelValue = graph.mapVertices((id, _) => {
+//      InAndOut(List(FromInfo(id, 100d)), List[FromInfo]())
+//    }).pregel(List[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
 
     /**
       * (1,InAndOut(List(1#100.000),List(1#100.000, 1#100.000)))
@@ -36,15 +36,15 @@ object GraphxDemoInOut {
       */
    // pregelValue.vertices.collect().foreach(println(_))
 
-    val value = pregelValue.vertices.mapValues((id, vd) => {
-      vd.in.filter(_.srcId != id)
-    })
-      .filter(f => !f._2.isEmpty)
-      .flatMap(r => {
-        r._2.groupBy(_.srcId).map(ss => {
-          Edge(ss._1, r._1, ss._2.map(_.score).sum)
-        })
-      })
+//    val value = pregelValue.vertices.mapValues((id, vd) => {
+//      vd.in.filter(_.srcId != id)
+//    })
+//      .filter(f => !f._2.isEmpty)
+//      .flatMap(r => {
+//        r._2.groupBy(_.srcId).map(ss => {
+//          Edge(ss._1, r._1, ss._2.map(_.score).sum)
+//        })
+//      })
 
     /**
       * Edge(1,2,100.0)
@@ -56,46 +56,46 @@ object GraphxDemoInOut {
       * Edge(2,7,100.0)
       * Edge(1,7,100.0)
       */
-    value.collect().foreach(println(_))
+   // value.collect().foreach(println(_))
 
     session.stop()
   }
 
 
-  def sendMsgIn(triplet: EdgeTriplet[InAndOut, Double]): Iterator[(VertexId, List[MsgFlag])]  = {
-    var tmp = triplet.srcAttr.in diff(triplet.srcAttr.out)
-    if(!tmp.isEmpty && tmp.map(_.srcId).contains(triplet.dstId)){
-      tmp = tmp.filter(f=> !triplet.dstAttr.in.map(_.srcId).contains(f.srcId))
-    }
-
-    if(!tmp.isEmpty){
-      val toIn = tmp.map(r=>{
-        val s = r.score * triplet.attr / 100D
-        MsgFlag(r.srcId,s,0)
-      })
-
-      val toOut =  tmp.map(r=>{
-        MsgFlag(r.srcId,r.score,1)
-      })
-      Iterator((triplet.dstId,toIn),(triplet.srcId,toOut))
-    }else{
-      Iterator.empty
-    }
-  }
-
-
-  def  mergeMsgIn(a: List[MsgFlag], b: List[MsgFlag]):List[MsgFlag]= a++b
-
-  def   vprogIn(vertexId: Long, vd: InAndOut, news: List[MsgFlag]): InAndOut = {
-    if(news == null || news.isEmpty) vd else{
-      val in = vd.in ++ news.filter(_.flag == 0).map(r=>FromInfo(r.srcId,r.score))
-      if(vd.out == null || vd.out.isEmpty){
-        val out = news.filter(_.flag == 1).map(r => FromInfo(r.srcId, r.score))
-        InAndOut(in, out)
-      }else{
-        val out = vd.out ++ news.filter(_.flag == 1).map(r => FromInfo(r.srcId, r.score))
-        InAndOut(in, out)
-      }
-    }
-  }
+//  def sendMsgIn(triplet: EdgeTriplet[InAndOut, Double]): Iterator[(VertexId, List[MsgFlag])]  = {
+//    var tmp = triplet.srcAttr.in diff(triplet.srcAttr.out)
+//    if(!tmp.isEmpty && tmp.map(_.srcId).contains(triplet.dstId)){
+//      tmp = tmp.filter(f=> !triplet.dstAttr.in.map(_.srcId).contains(f.srcId))
+//    }
+//
+//    if(!tmp.isEmpty){
+//      val toIn = tmp.map(r=>{
+//        val s = r.score * triplet.attr / 100D
+//        MsgFlag(r.srcId,s,0)
+//      })
+//
+//      val toOut =  tmp.map(r=>{
+//        MsgFlag(r.srcId,r.score,1)
+//      })
+//      Iterator((triplet.dstId,toIn),(triplet.srcId,toOut))
+//    }else{
+//      Iterator.empty
+//    }
+//  }
+//
+//
+//  def  mergeMsgIn(a: List[MsgFlag], b: List[MsgFlag]):List[MsgFlag]= a++b
+//
+//  def   vprogIn(vertexId: Long, vd: InAndOut, news: List[MsgFlag]): InAndOut = {
+//    if(news == null || news.isEmpty) vd else{
+//      val in = vd.in ++ news.filter(_.flag == 0).map(r=>FromInfo(r.srcId,r.score))
+//      if(vd.out == null || vd.out.isEmpty){
+//        val out = news.filter(_.flag == 1).map(r => FromInfo(r.srcId, r.score))
+//        InAndOut(in, out)
+//      }else{
+//        val out = vd.out ++ news.filter(_.flag == 1).map(r => FromInfo(r.srcId, r.score))
+//        InAndOut(in, out)
+//      }
+//    }
+//  }
 }

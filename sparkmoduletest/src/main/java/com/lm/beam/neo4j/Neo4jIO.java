@@ -40,6 +40,7 @@ public class Neo4jIO {
 
     private Neo4jIO() {}
 
+
     public static <T>Write<T> write(){
        return new AutoValue_Neo4jIO_Write.Builder<T>()
                 .setBatchSize(DEFAULT_BATCH_SIZE)

@@ -1,5 +1,7 @@
 package com.lm.beam.neo4j;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import org.apache.beam.repackaged.beam_sdks_java_core.org.apache.commons.lang3.builder.ToStringExclude;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.runners.spark.SparkPipelineOptions;
@@ -10,13 +12,14 @@ import org.apache.beam.sdk.transforms.Create;
 import org.apache.beam.sdk.values.PCollection;
 import org.junit.Assert;
 import org.junit.Test;
+import org.neo4j.driver.internal.InternalNode;
+import org.neo4j.driver.internal.InternalPath;
 import org.neo4j.driver.v1.*;
+import org.neo4j.driver.v1.types.Node;
+import org.neo4j.driver.v1.types.Relationship;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletionStage;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +33,9 @@ import static org.neo4j.driver.v1.Values.parameters;
 public class Neo4jTest implements Serializable {
     private Driver createDrive(){
 //http://192.168.200.9/
-        return GraphDatabase.driver( "bolt://192.168.200.115:7887", AuthTokens.basic( "neo4j", "admin" ));
+
+        //bolt://192.168.200.115:7887 AuthTokens.basic( "neo4j", "admin" )
+        return GraphDatabase.driver( "bolt://localhost:7687", AuthTokens.basic( "neo4j", "limeng" ));
     }
 
     @Test
@@ -195,33 +200,89 @@ public class Neo4jTest implements Serializable {
         np.apply(Neo4jIO.<Neo4jObject>write().withDriverConfiguration(Neo4jIO.DriverConfiguration.create(url,username,password)).withStatement(sql));
 
 
-
-
         pipeline.run().waitUntilFinish();
     }
 
     @Test
     public void testQuery(){
+        Map<String, HashSet<Map<String, Object>>> retuMap = new HashMap<String, HashSet<Map<String, Object>>>();
+
         try {
             Driver drive = createDrive();
             Session session = drive.session();
 
-            String sql="MATCH p=(a:AGENCY {agency_id:\"aid1\"})-[r:RELATION]-() RETURN p";
+            //String sql="MATCH  (n:Node) return n";
+           //String sql="MATCH p=(a:AgencyInfo {agencyId:\"aid1\"})  RETURN p";
+            String sql="MATCH p=()-[r:AgencyRelation]->() RETURN p LIMIT 25";
             StatementResult result = session.run(sql);
+
+
+            HashSet<Map<String, Object>> nodedatas = new HashSet<Map<String, Object>>();// 存放所有的节点数据
+            HashSet<Map<String, Object>> allrelationships = new HashSet<Map<String, Object>>();// 存放所有的节点数据
+
 
             while (result.hasNext()){
                 Record record = result.next();
-                System.out.println(record.get(0).toString());
+                Map<String, Object> date = record.asMap();
+                for(String key : date.keySet()){
+                    Object object = date.get(key);
+                    InternalPath data = (InternalPath) object;
+                    Iterator<Node> nodes = data.nodes().iterator();
+
+                    while (nodes.hasNext()){
+                        Node node = nodes.next();
+                        long nodeId = node.id();
+                        Map<String, Object> nodedatamap = new HashMap<String, Object>();
+                        // 添加节点的属性
+                        Map<String, Object> data1 = node.asMap();
+                        for (String key1 : data1.keySet()) {
+                            nodedatamap.put(key1, data1.get(key1));
+                        }
+                        nodedatamap.put("id", nodeId);
+                        nodedatas.add(nodedatamap);
+                    }
+                    Iterator<Relationship> relationships = data.relationships().iterator();
+                    while (relationships.hasNext()){
+                        Map<String, Object> shipdata = new HashMap<String, Object>();
+
+                        Relationship relationship = relationships.next();
+                        long id = relationship.id();
+
+                        Map<String, Object> data1 = relationship.asMap();// 添加关系的属性
+                        for (String key1 : data1.keySet()) {
+                            shipdata.put(key1, data1.get(key1));
+                        }
+                        long source = relationship.startNodeId();// 起始节点id
+                        long target = relationship.endNodeId();// 结束节点Id
+                        shipdata.put("source", source);// 添加起始节点id
+                        shipdata.put("target", target);
+                        shipdata.put("id",id);
+
+                        allrelationships.add(shipdata);
+                    }
+
+                }
+
             }
 
 
+            retuMap.put("nodes", nodedatas);
+            retuMap.put("relation", allrelationships);
 
             session.close();
             drive.close();
         }catch (Exception e){
+            e.printStackTrace();
+        }finally {
 
         }
 
+        String jsonString = JSON.toJSONString(retuMap);
+        Map<String, HashSet<Map<String, Object>>> tmpMap = JSON.parseObject(jsonString, new TypeReference<Map<String, HashSet<Map<String, Object>>>>() {});
+
+        Assert.assertNotNull(retuMap);
+        Assert.assertNotNull(tmpMap);
+        Assert.assertNotNull(jsonString);
     }
 
     @Test
