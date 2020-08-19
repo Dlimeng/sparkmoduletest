@@ -5,6 +5,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.SparkSession
 
+import scala.collection.mutable
+
 /**
   * @Classname Members
   * @Description TODO
@@ -70,9 +72,14 @@ object Members {
 
 //    getMembersBySplitRoot(memRdd,node)
 
-    val v:String = "香港中央结算(代理人)有限公司"
-    println(v.contains("香港中央结算(代理人)有限公司"))
+//    val v:String = "香港中央结算(代理人)有限公司"
+//    println(v.contains("香港中央结算(代理人)有限公司"))
 
+    val map = new mutable.HashMap[String,String]
+    map.put("1","2")
+    println(map)
+    map.clear()
+    println(map)
     spark.stop()
   }
 }

@@ -38,21 +38,25 @@ object GraphxDemo12 {
     val roots = graph.aggregateMessages[(Int,Int,VertexId)](ctx=>{
       ctx.sendToSrc((1,0,ctx.srcId))
       ctx.sendToDst((0,1,ctx.srcId))
-    },mergeMs).filter(f=>f._2._2 == 0)
+    },mergeMs).filter(_._2._2 == 0)
 
     roots.collect().foreach(println(_))
     println("roots end")
 
 
-    val graph2: Graph[List[FromInfo], Double] = graph.outerJoinVertices(roots) {
+    val graph2: Graph[Set[FromInfo], Double] = graph.outerJoinVertices(roots) {
       case (id, _, r) => {
-        InAndOut(List(FromInfo(id, 100D, !r.isEmpty)), List[FromInfo]())
+        InAndOut(Set(FromInfo(id, 100D, !r.isEmpty,List(id.toString))), Set[FromInfo]())
       }
-    }.pregel(List[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
+    }.pregel(Set[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
       .mapVertices((id, vd) => vd.in.filter(_.srcId != id))
 //
     println("graph2 ")
-    graph2.vertices.collect().foreach(println(_))
+    graph2.vertices.collect().foreach(f=>{
+
+      f._2.foreach(f2=> f2.paths.foreach(print(_)))
+      println()
+    })
 //
 //    /**
 //      * (1,List(5#20.000))
@@ -84,27 +88,27 @@ object GraphxDemo12 {
 //
 //
 //
-     val es = graph2.vertices.filter(f=> !f._2.isEmpty).flatMap(r => {
-          val cs = r._2.filter(f=> f.score == 101D)
-          if(!cs.isEmpty){
-            cs.map(s=> (s.srcId,r._1,s.score))
-          }else{
-            val sid = r._1
-            println(s"sid $sid")
-            val ls = r._2.groupBy(_.srcId).map(s => {
+//     val es = graph2.vertices.filter(f=> !f._2.isEmpty).flatMap(r => {
+//          val cs = r._2.filter(f=> f.score == 101D)
+//          if(!cs.isEmpty){
+//            cs.map(s=> (s.srcId,r._1,s.score))
+//          }else{
+//            val sid = r._1
+//            println(s"sid $sid")
+//            val ls = r._2.groupBy(_.srcId).map(s => {
+//
+//              (s._1, s._2.map(_.score).sum)
+//            })
+//
+//            val max = ls.maxBy(_._2)
+//            val lsMax = ls.filter(_._2 == max._2)
+//            //group scid score
+//            lsMax.map(s => (s._1, r._1, s._2))
+//          }
+//     })
 
-              (s._1, s._2.map(_.score).sum)
-            })
-
-            val max = ls.maxBy(_._2)
-            val lsMax = ls.filter(_._2 == max._2)
-            //group scid score
-            lsMax.map(s => (s._1, r._1, s._2))
-          }
-     })
-
-    println("es ")
-    es.collect().foreach(println(_))
+//    println("es ")
+//    es.collect().foreach(println(_))
 //
 //    val ep = es.map(m=>(m._2,(List((m._1, m._3))))).reduceByKey((a,b)=>{
 //      val max = a.union(b).maxBy(_._2)._2
@@ -184,21 +188,44 @@ object GraphxDemo12 {
   def mergeDsc(a: List[MsgToDsc], b: List[MsgToDsc]): List[MsgToDsc] = a ++ b
 
 
-  def vprogIn(vertexId: Long,vd:InAndOut,news:List[MsgFlag]):InAndOut ={
+  def vprogIn(vertexId: Long,vd:InAndOut,news:Set[MsgFlag]):InAndOut ={
     if(news == null || news.isEmpty ) vd else{
-      val in = vd.in ++ news.filter(_.flag == 0).map(r=>FromInfo(r.srcId,r.score,r.root))
+      val in = vd.in ++ news.filter(_.flag == 0).map(r=>{
+        val paths = r.paths
+        if(paths.nonEmpty){
+          FromInfo(r.srcId,r.score,r.root,paths)
+        }else{
+          FromInfo(r.srcId,r.score,r.root,List(r.srcId.toString))
+        }
+      })
       if(vd.out.isEmpty){
-        val out =  news.filter(_.flag == 1).map(r=>FromInfo(r.srcId,r.score,r.root))
+        val out =  news.filter(_.flag == 1).map(r=>{
+          val paths = r.paths
+          if(paths.nonEmpty){
+            FromInfo(r.srcId,r.score,r.root,paths)
+          }else{
+            FromInfo(r.srcId,r.score,r.root,List(r.srcId.toString))
+          }
+        })
         InAndOut(in,out)
       }else{
-        val out = vd.out ++ news.filter(_.flag == 1).map(r=>FromInfo(r.srcId,r.score,r.root))
+        val out = vd.out ++ news.filter(_.flag == 1).map(r=>{
+          val paths = r.paths
+          if(paths.nonEmpty){
+            FromInfo(r.srcId,r.score,r.root,paths)
+          }else{
+            FromInfo(r.srcId,r.score,r.root,List(r.srcId.toString))
+          }
+        })
         InAndOut(in,out)
       }
     }
   }
 
 
-  def sendMsgIn(triplet: EdgeTriplet[InAndOut, Double]): Iterator[(VertexId, List[MsgFlag])] = {
+  def sendMsgIn(triplet: EdgeTriplet[InAndOut, Double]): Iterator[(VertexId, Set[MsgFlag])] = {
+    val from = triplet.srcId
+    val to = triplet.dstId
     var tm = triplet.srcAttr.in diff(triplet.srcAttr.out)
 
     if(!tm.isEmpty && tm.map(_.srcId).contains(triplet.dstId)){
@@ -206,15 +233,39 @@ object GraphxDemo12 {
     }
 
     if(!tm.isEmpty){
-      val toIn = tm.map(r=>{
-        MsgFlag(r.srcId, triplet.attr, 0, r.root)
-      }).filter(f=>f.root)
+//      val toIn = tm.map(r=>{
+//        MsgFlag(r.srcId, triplet.attr, 0, r.root)
+//      }).filter(f=>f.root)
 
-      val toOut = tm.map(r => MsgFlag(r.srcId, r.score, 1, r.root)).filter(f=>f.root)
+      val toIn = tm.map(r=>{
+         val paths = r.paths
+         if(paths.nonEmpty){
+           if(paths.contains(from)){
+             MsgFlag(r.srcId, triplet.attr, 0, r.root,paths++List(from.toString))
+           }else{
+             MsgFlag(r.srcId, triplet.attr, 0, r.root,paths)
+           }
+         }else{
+           MsgFlag(r.srcId, triplet.attr, 0, r.root,List(r.srcId.toString))
+         }
+      })
+
+      val toOut = tm.map(r => {
+        val paths = r.paths
+        if(paths.nonEmpty){
+          if(paths.contains(from)){
+            MsgFlag(r.srcId, triplet.attr, 0, r.root,paths++List(from.toString))
+          }else{
+            MsgFlag(r.srcId, triplet.attr, 0, r.root,paths)
+          }
+        }else{
+          MsgFlag(r.srcId, triplet.attr, 0, r.root,List(r.srcId.toString))
+        }
+      })
       Iterator((triplet.dstId, toIn), (triplet.srcId, toOut))
     }else Iterator.empty
   }
 
-  def mergeMsgIn(a: List[MsgFlag], b: List[MsgFlag]): List[MsgFlag] = a ++ b
+  def mergeMsgIn(a: Set[MsgFlag], b: Set[MsgFlag]): Set[MsgFlag] = a ++ b
 
 }

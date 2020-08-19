@@ -9,7 +9,7 @@ package com.lm.graphx.pojo
 class CaseModel {
 
 }
-case class FromInfo(srcId:Long,score:Double, root: Boolean) extends Serializable{
+case class FromInfo(srcId:Long,score:Double, root: Boolean,paths: List[String]) extends Serializable{
   override def hashCode(): Int = srcId.hashCode()
 
   override def equals(obj: Any): Boolean = {
@@ -22,11 +22,11 @@ case class FromInfo(srcId:Long,score:Double, root: Boolean) extends Serializable
   override def toString: String = srcId +"#"+score.formatted("%.3f")
 }
 
-case class InAndOut(in:List[FromInfo],out:List[FromInfo]) extends Serializable
+case class InAndOut(in:Set[FromInfo],out:Set[FromInfo]) extends Serializable
 
 // flag 1 给OUT  0 给In
-case class MsgFlag(srcId: Long, score: Double, flag: Int, root: Boolean) extends Serializable {
-  override def toString: String = srcId + " # " + flag
+case class MsgFlag(srcId: Long, score: Double, flag: Int, root: Boolean,paths:List[String]) extends Serializable {
+  override def toString: String = srcId + " # " + flag+"# path"+paths.mkString("#")
 }
 
 
