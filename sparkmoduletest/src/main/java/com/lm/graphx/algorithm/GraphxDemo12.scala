@@ -24,8 +24,9 @@ object GraphxDemo12 {
     val v = sc.makeRDD(Array((1L,""),(2L,""),(3L,""),(4L,""),(5L,"")))
 
     //Edge(5L,1L,20D)
-    val e =sc.makeRDD(Array(Edge(1L,3L,40D),Edge(2L,3L,40D),Edge(4L,3L,15D),Edge(5L,2L,20D)))
+   // val e =sc.makeRDD(Array(Edge(1L,6L,40D),Edge(2L,3L,40D),Edge(5L,2L,20D),Edge(3L,6L,40D),Edge(6L,7L,40D)))
 
+    val e =sc.makeRDD(Array(Edge(2L,3L,40D),Edge(2L,4L,40D),Edge(3L,5L,20D),Edge(4L,5L,40D),Edge(6L,4L,40D)))
     val graph = Graph(v,e)
 
     /**
@@ -44,19 +45,15 @@ object GraphxDemo12 {
     println("roots end")
 
 
-    val graph2: Graph[Set[FromInfo], Double] = graph.outerJoinVertices(roots) {
+    val graph2: Graph[List[FromInfo], Double] = graph.outerJoinVertices(roots) {
       case (id, _, r) => {
-        InAndOut(Set(FromInfo(id, 100D, !r.isEmpty,List(id.toString))), Set[FromInfo]())
+        InAndOut(List(FromInfo(id, 100D, !r.isEmpty,null)), List[FromInfo]())
       }
-    }.pregel(Set[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
+    }.pregel(List[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
       .mapVertices((id, vd) => vd.in.filter(_.srcId != id))
 //
     println("graph2 ")
-    graph2.vertices.collect().foreach(f=>{
-
-      f._2.foreach(f2=> f2.paths.foreach(print(_)))
-      println()
-    })
+    graph2.vertices.collect().foreach(println(_))
 //
 //    /**
 //      * (1,List(5#20.000))
@@ -188,84 +185,38 @@ object GraphxDemo12 {
   def mergeDsc(a: List[MsgToDsc], b: List[MsgToDsc]): List[MsgToDsc] = a ++ b
 
 
-  def vprogIn(vertexId: Long,vd:InAndOut,news:Set[MsgFlag]):InAndOut ={
-    if(news == null || news.isEmpty ) vd else{
-      val in = vd.in ++ news.filter(_.flag == 0).map(r=>{
-        val paths = r.paths
-        if(paths.nonEmpty){
-          FromInfo(r.srcId,r.score,r.root,paths)
-        }else{
-          FromInfo(r.srcId,r.score,r.root,List(r.srcId.toString))
-        }
-      })
-      if(vd.out.isEmpty){
-        val out =  news.filter(_.flag == 1).map(r=>{
-          val paths = r.paths
-          if(paths.nonEmpty){
-            FromInfo(r.srcId,r.score,r.root,paths)
-          }else{
-            FromInfo(r.srcId,r.score,r.root,List(r.srcId.toString))
-          }
-        })
-        InAndOut(in,out)
-      }else{
-        val out = vd.out ++ news.filter(_.flag == 1).map(r=>{
-          val paths = r.paths
-          if(paths.nonEmpty){
-            FromInfo(r.srcId,r.score,r.root,paths)
-          }else{
-            FromInfo(r.srcId,r.score,r.root,List(r.srcId.toString))
-          }
-        })
-        InAndOut(in,out)
+  def vprogIn(vertexId: Long,vd:InAndOut,news:List[MsgFlag]):InAndOut ={
+    if (news == null || news.isEmpty) vd else {
+      val in = vd.in ++ news.filter(_.flag == 0).map(r => FromInfo(r.srcId, r.score, r.root,r.path))
+      if (vd.out == null) {
+        val out = news.filter(_.flag == 1).map(r => FromInfo(r.srcId, r.score, r.root,r.path))
+        InAndOut(in, out)
+      } else {
+        val out = vd.out ++ news.filter(_.flag == 1).map(r => FromInfo(r.srcId, r.score, r.root,r.path))
+        InAndOut(in, out)
       }
     }
   }
 
 
-  def sendMsgIn(triplet: EdgeTriplet[InAndOut, Double]): Iterator[(VertexId, Set[MsgFlag])] = {
-    val from = triplet.srcId
-    val to = triplet.dstId
-    var tm = triplet.srcAttr.in diff(triplet.srcAttr.out)
+  def sendMsgIn(triplet: EdgeTriplet[InAndOut, Double]): Iterator[(VertexId, List[MsgFlag])] = {
 
-    if(!tm.isEmpty && tm.map(_.srcId).contains(triplet.dstId)){
-      tm = tm.diff(triplet.dstAttr.in)
-    }
+    var tm = triplet.srcAttr.in diff (triplet.srcAttr.out)
+    //恶心的环
+    if (!tm.isEmpty && tm.map(_.srcId).contains(triplet.dstId)) tm = tm.diff(triplet.dstAttr.in)
 
-    if(!tm.isEmpty){
-//      val toIn = tm.map(r=>{
-//        MsgFlag(r.srcId, triplet.attr, 0, r.root)
-//      }).filter(f=>f.root)
-
-      val toIn = tm.map(r=>{
-         val paths = r.paths
-         if(paths.nonEmpty){
-           if(paths.contains(from)){
-             MsgFlag(r.srcId, triplet.attr, 0, r.root,paths++List(from.toString))
-           }else{
-             MsgFlag(r.srcId, triplet.attr, 0, r.root,paths)
-           }
-         }else{
-           MsgFlag(r.srcId, triplet.attr, 0, r.root,List(r.srcId.toString))
-         }
+    if (!tm.isEmpty) {
+      val toIn = tm.map(r => {
+        val s = r.score * triplet.attr / 100D
+        val p = r.path
+        if(p == null) MsgFlag(r.srcId, s, 0, r.root,r.srcId.toString)
+        else MsgFlag(r.srcId, s, 0, r.root,p+"-"+triplet.srcId)
       })
-
-      val toOut = tm.map(r => {
-        val paths = r.paths
-        if(paths.nonEmpty){
-          if(paths.contains(from)){
-            MsgFlag(r.srcId, triplet.attr, 0, r.root,paths++List(from.toString))
-          }else{
-            MsgFlag(r.srcId, triplet.attr, 0, r.root,paths)
-          }
-        }else{
-          MsgFlag(r.srcId, triplet.attr, 0, r.root,List(r.srcId.toString))
-        }
-      })
+      val toOut = tm.map(r => MsgFlag(r.srcId, r.score, 1, r.root,r.path))
       Iterator((triplet.dstId, toIn), (triplet.srcId, toOut))
-    }else Iterator.empty
+    } else Iterator.empty
   }
 
-  def mergeMsgIn(a: Set[MsgFlag], b: Set[MsgFlag]): Set[MsgFlag] = a ++ b
+  def mergeMsgIn(a: List[MsgFlag], b: List[MsgFlag]): List[MsgFlag] = a ++ b
 
 }
