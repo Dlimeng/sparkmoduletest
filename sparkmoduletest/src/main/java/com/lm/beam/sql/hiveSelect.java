@@ -91,16 +91,20 @@ public class hiveSelect implements Serializable {
 
         try {
             Connection connection = cpds.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement("show databases");
+            PreparedStatement preparedStatement = connection.prepareStatement("select * from linkis_db.pretest");
             ResultSet resultSet = preparedStatement.executeQuery();
             ResultSetMetaData metaData = resultSet.getMetaData();
             System.out.println(metaData.getColumnCount());
+
+
 
             while (resultSet.next()){
                 String num = resultSet.getString(1);
                 System.out.println(num);
             }
 
+            preparedStatement = connection.prepareStatement("create table linkis_db.test6(id string)");
+            preparedStatement.executeUpdate();
 
         } catch (SQLException e) {
             e.printStackTrace();
