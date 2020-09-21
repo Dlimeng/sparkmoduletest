@@ -23,7 +23,7 @@ object demo {
     //println(v1)
 
     val s ="test#c#vb"
-    s.split("#").foreach(println(_))
+    s.split("#")(2)
   }
 
 
