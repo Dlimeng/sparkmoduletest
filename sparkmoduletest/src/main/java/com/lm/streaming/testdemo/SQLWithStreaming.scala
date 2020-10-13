@@ -15,7 +15,6 @@ object SQLWithStreaming {
   def main(args: Array[String]): Unit = {
     val ss=SparkSession.builder().master("local[*]").appName("MyUDAF").getOrCreate()
     val sc=ss.sparkContext
-    val sqlc=ss.sqlContext
     val context = new StreamingContext(sc,Seconds(5))
 
 
