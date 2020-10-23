@@ -16,7 +16,7 @@ object WindowOnStreaming {
     val sc=ss.sparkContext
     val context = new StreamingContext(sc,Seconds(5))
 
-    val lines: ReceiverInputDStream[String] = context.socketTextStream("localhost",9999)
+    val lines: ReceiverInputDStream[String] = context.socketTextStream("m4.server",9999)
 
     val words: DStream[(String, Int)] = lines.flatMap(_.split(",")).map((_,1))
     //窗口宽度 20 窗口滑动10
