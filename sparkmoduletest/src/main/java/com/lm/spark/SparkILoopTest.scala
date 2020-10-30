@@ -25,9 +25,10 @@ object SparkILoopTest {
     val classpath = classpathJars.mkString(File.pathSeparator)
     println("classpath "+classpath)
 
+
     val settings = new GenericRunnerSettings(error(_))
     settings.usejavacp.value = true
-    settings.processArguments(List("-classpath","C://Program Files//Java//jdk1.8.0_192//jre//lib//rt.jar"),true)
+    settings.processArguments(List("-classpath",classpath),true)
     settings.embeddedDefaults(Thread.currentThread().getContextClassLoader())
     sparkILoop.process(settings)
 
@@ -44,11 +45,17 @@ object SparkILoopTest {
       case Results.Success =>
         out.flush()
         println("out :"+out.toString)
+        out.close()
       case Results.Incomplete => println("incomplete code.")
+        out.close()
       case Results.Error =>  println("Error out :"+out.toString)
+        out.close()
+
     }
 
 
+
+    sparkILoop.close()
   }
 }
 
