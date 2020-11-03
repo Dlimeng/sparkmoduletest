@@ -18,7 +18,10 @@ object SparkILoopTest {
     val out = new BufferedOutputStream(new FileOutputStream(file), 16)
     val sparkILoop = new ILoop(None,new JPrintWriter(out,true))
 
-    val classpathJars =  System.getProperty("java.class.path").split(":").filter(_.endsWith(".jar"))
+    System.setProperty("java.class.path",".;C:\\Program Files\\Java\\jdk1.8.0_192\\lib;C:\\Program Files\\Java\\jdk1.8.0_192\\lib\\dt.jar;C:\\Program Files\\Java\\jdk1.8.0_192\\lib\\tools.jar")
+   // val classpathJars =  System.getProperty("java.class.path").split(":").filter(_.endsWith(".jar"))
+
+    val classpathJars =  System.getProperty("java.class.path")
     println("classpathJars")
     classpathJars.foreach(println(_))
 
@@ -28,7 +31,7 @@ object SparkILoopTest {
 
     val settings = new GenericRunnerSettings(error(_))
     settings.usejavacp.value = true
-    settings.processArguments(List("-classpath",classpath),true)
+    settings.processArguments(List("-classpath","C:\\Program Files\\Java\\jdk1.8.0_192\\jre\\lib\\rt.jar"),true)
     settings.embeddedDefaults(Thread.currentThread().getContextClassLoader())
     sparkILoop.process(settings)
 
