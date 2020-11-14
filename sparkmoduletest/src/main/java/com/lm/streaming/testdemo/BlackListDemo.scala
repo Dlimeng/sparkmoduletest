@@ -19,18 +19,18 @@ object BlackListDemo {
     val sc=ss.sparkContext
     val context = new StreamingContext(sc,Seconds(5))
 
-    val lines: ReceiverInputDStream[String] = context.socketTextStream("node1",9999)
+    val lines: ReceiverInputDStream[String] = context.socketTextStream("localhost",9999)
 
 
     val blacklistRDD: RDD[(String, Boolean)] = sc.parallelize(Array("zhangsan2", "lisi2")).map((_, true))
 
     val words: DStream[(String, Int)] = lines.flatMap(_.split(",")).map((_,1))
 
+
     val needwordDS=words.transform(rdd=>{
       val leftRDD = rdd.leftOuterJoin(blacklistRDD)
 
       val needword=leftRDD.filter( tuple =>{
-        val x= tuple._1
         val y=tuple._2
         if(y._2.isEmpty){
           true
