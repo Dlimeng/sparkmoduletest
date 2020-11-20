@@ -2,8 +2,9 @@ package demo
 
 import com.lm.demo
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.dstream.{DStream, ReceiverInputDStream}
-import org.apache.spark.streaming.{Seconds, StreamingContext}
+
+import org.apache.spark.streaming.dstream._
+import org.apache.spark.streaming._
 
 /**
   * 最近20秒内，读取单词个数
@@ -22,11 +23,11 @@ object WindowOnStreaming {
 
     val lines: ReceiverInputDStream[String] = context.socketTextStream("localhost",9999)
 
-    val words: DStream[(String, Int)] = lines.flatMap(_.split(",")).map((_,1))
+    val words = lines.flatMap(_.split(",")).map((_,1))
 
 
     //窗口宽度 20 窗口滑动10
-    val rbkw: DStream[(String, Int)] = words.reduceByKeyAndWindow(_+_,_-_,Seconds(20),Seconds(10))
+    val rbkw = words.reduceByKeyAndWindow(_+_,_-_,Seconds(20),Seconds(10))
 
     rbkw.print()
 

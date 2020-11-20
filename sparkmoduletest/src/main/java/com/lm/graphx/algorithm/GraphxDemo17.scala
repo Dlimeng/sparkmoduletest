@@ -36,6 +36,8 @@ object GraphxDemo17 {
     val head = roots.map(m=> (m,m))
 
 
+
+
     val queryGroup = graph.outerJoinVertices(head)((vid,vd,ud) =>{
       val u = ud.getOrElse(Long.MaxValue)
       if(u != Long.MaxValue){
