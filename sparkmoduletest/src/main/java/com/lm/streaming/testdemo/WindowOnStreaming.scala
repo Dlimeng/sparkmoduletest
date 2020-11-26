@@ -18,6 +18,7 @@ object WindowOnStreaming {
 
     sc.setCheckpointDir("E:\\tmp\\log")
 
+
     val context = new StreamingContext(sc,Seconds(5))
 
 

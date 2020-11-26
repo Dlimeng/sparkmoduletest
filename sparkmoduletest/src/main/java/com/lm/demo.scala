@@ -24,6 +24,23 @@ object demo {
 
     val s ="test#c#vb"
     s.split("#")(2)
+
+    val longExecID = "030520IDEsparkdev-cdh-client1:9106IDE_hdfs_21"
+    val creatorLength = Integer.parseInt(longExecID.substring(0,2))
+    val executeLength = Integer.parseInt(longExecID.substring(2,4))
+    val instanceLength = Integer.parseInt(longExecID.substring(4,6))
+    val creator = longExecID.substring(6, 6 + creatorLength)
+    val executeApplicationName = longExecID.substring(6 + creatorLength, 6 + creatorLength + executeLength)
+    val instance = longExecID.substring(6 + creatorLength + executeLength, 6 + creatorLength + executeLength + instanceLength)
+    val shortExecID = longExecID.substring(6 + creatorLength + executeLength + instanceLength, longExecID.length)
+
+    println("creator")
+
+
+  }
+
+  def testFUN(): Unit ={
+    println("test lm fun ")
   }
 
 
