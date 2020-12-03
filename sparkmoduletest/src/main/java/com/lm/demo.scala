@@ -22,19 +22,23 @@ object demo {
     //val v1 = simhash.calSimhash(content)
     //println(v1)
 
-    val s ="test#c#vb"
-    s.split("#")(2)
+ //   val s ="test#c#vb"
+ //   s.split("#")(2)
 
-    val longExecID = "030520IDEsparkdev-cdh-client1:9106IDE_hdfs_21"
-    val creatorLength = Integer.parseInt(longExecID.substring(0,2))
-    val executeLength = Integer.parseInt(longExecID.substring(2,4))
-    val instanceLength = Integer.parseInt(longExecID.substring(4,6))
-    val creator = longExecID.substring(6, 6 + creatorLength)
-    val executeApplicationName = longExecID.substring(6 + creatorLength, 6 + creatorLength + executeLength)
-    val instance = longExecID.substring(6 + creatorLength + executeLength, 6 + creatorLength + executeLength + instanceLength)
-    val shortExecID = longExecID.substring(6 + creatorLength + executeLength + instanceLength, longExecID.length)
+//    val longExecID = "030520IDEsparkdev-cdh-client1:9106IDE_hdfs_21"
+//    val creatorLength = Integer.parseInt(longExecID.substring(0,2))
+//    val executeLength = Integer.parseInt(longExecID.substring(2,4))
+//    val instanceLength = Integer.parseInt(longExecID.substring(4,6))
+//    val creator = longExecID.substring(6, 6 + creatorLength)
+//    val executeApplicationName = longExecID.substring(6 + creatorLength, 6 + creatorLength + executeLength)
+//    val instance = longExecID.substring(6 + creatorLength + executeLength, 6 + creatorLength + executeLength + instanceLength)
+//    val shortExecID = longExecID.substring(6 + creatorLength + executeLength + instanceLength, longExecID.length)
 
-    println("creator")
+//    println("creator")
+
+     val list = Array(1,2,3,4,5)
+
+     println(list.tail.fold(0)(_ + _))
 
 
   }

@@ -4,6 +4,11 @@ import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Maps;
 import com.lm.beam.es.model.Demo;
+import io.searchbox.client.JestClient;
+import io.searchbox.client.JestClientFactory;
+import io.searchbox.client.JestResult;
+import io.searchbox.client.config.HttpClientConfig;
+import io.searchbox.indices.IndicesExists;
 import org.apache.beam.runners.direct.DirectRunner;
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.coders.StringUtf8Coder;
@@ -21,20 +26,19 @@ import org.apache.beam.sdk.transforms.windowing.Window;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.Row;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hbase.filter.FuzzyRowFilter;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.Request;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.RestClient;
-import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.client.*;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -65,6 +69,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -90,8 +95,20 @@ public class EsTest implements Serializable {
         pipeline.run();
     }
 
-
+    @Test
     public void testRead2() throws IOException {
+
+        RestClientBuilder builder = RestClient.builder(HttpHost.create("http://192.168.200.18:9212"));
+        builder.setHttpClientConfigCallback(httpClientBuilder -> {
+            return httpClientBuilder.setDefaultIOReactorConfig(IOReactorConfig.custom().setIoThreadCount(1).build());
+        });
+        RestClient restClient = builder.build();
+
+        List<String> indices = new ArrayList<>();
+        Request request = new Request("GET", "_cat/indices");
+        request.addParameter("format", "JSON");
+        Response response = restClient.performRequest(request);
+        System.out.println();
 
 //        String ip="192.168.100.102";
 //        int port=9210;
@@ -109,10 +126,27 @@ public class EsTest implements Serializable {
 //                        "_doc");
 //        Map<String, String> params = new HashMap<>();
 //        Response response = restClient.performRequest("GET", endPoint, params, queryEntity);
-//        InputStream content = response.getEntity().getContent();
-//        stringStream(content);
+        InputStream content = response.getEntity().getContent();
+        stringStream(content);
 
     }
+    @Test
+    public void testRead3() throws IOException {
+        JestClientFactory factory = new JestClientFactory();
+        HttpClientConfig.Builder httpClientConfig = new HttpClientConfig
+                .Builder("http://192.168.200.18:9212")
+                .setPreemptiveAuth(new HttpHost("http://192.168.200.18:9212"))
+                .connTimeout(30000)
+                .maxTotalConnection(200)
+                .discoveryFrequency(5L, TimeUnit.MINUTES);
+        httpClientConfig.setPreemptiveAuth(new HttpHost("http://192.168.200.18:9212"));
+
+        factory.setHttpClientConfig(httpClientConfig.build());
+        JestClient jestClient = factory.getObject();
+        JestResult rst = jestClient.execute(new IndicesExists.Builder("kg.group_v3_20201203").build());
+        System.out.println(rst.getResponseCode());
+    }
+
 
     public void stringStream(InputStream content) throws IOException {
         //读一个字节数组，一般是1024大小
