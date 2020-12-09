@@ -31,14 +31,23 @@ import org.apache.hadoop.hbase.filter.FuzzyRowFilter;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequestInterceptor;
+import org.apache.http.client.methods.HttpRequestWrapper;
 import org.apache.http.entity.ContentType;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.entity.NStringEntity;
 import org.apache.http.util.EntityUtils;
+import org.elasticsearch.ElasticsearchException;
+import org.elasticsearch.action.admin.indices.get.GetIndexRequest;
+import org.elasticsearch.action.get.GetRequest;
+import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.*;
+
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.BoolQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
@@ -68,6 +77,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -80,6 +91,12 @@ import java.util.regex.Pattern;
  */
 public class EsTest implements Serializable {
 
+    private static final String INCLUDE_TYPE_NAME = "include_type_name";
+    private static final String MASTER_TIMEOUT = "master_timeout";
+    private static final String MAPPING_TYPE_HEAD = "_mapping_type";
+    private static final String MAPPING_TYPE_DEFAULT = "_doc";
+    private static final String MAPPING_PATH = "_mapping";
+    private static final int HEAP_BUFFER_SIZE = 100 * 1024 * 1024;
     public void testRead(){
         PipelineOptions options = PipelineOptionsFactory.create();
         // 显式指定PipelineRunner：DirectRunner（Local模式）
@@ -105,9 +122,9 @@ public class EsTest implements Serializable {
         RestClient restClient = builder.build();
 
         List<String> indices = new ArrayList<>();
-        Request request = new Request("GET", "_cat/indices");
-        request.addParameter("format", "JSON");
-        Response response = restClient.performRequest(request);
+//        Request request = new Request("GET", "_cat/indices");
+//        request.addParameter("format", "JSON");
+//        Response response = restClient.performRequest(request);
         System.out.println();
 
 //        String ip="192.168.100.102";
@@ -126,10 +143,76 @@ public class EsTest implements Serializable {
 //                        "_doc");
 //        Map<String, String> params = new HashMap<>();
 //        Response response = restClient.performRequest("GET", endPoint, params, queryEntity);
-        InputStream content = response.getEntity().getContent();
-        stringStream(content);
+       // InputStream content = response.getEntity().getContent();
+       // stringStream(content);
 
     }
+
+    @Test
+    public void testRead4() throws IOException{
+        RestClientBuilder restClientBuilder = RestClient.builder(HttpHost.create("http://192.168.200.18:9212"));
+//        restClientBuilder.setHttpClientConfigCallback(httpClientBuilder->{
+//            httpClientBuilder.addInterceptorFirst((HttpRequestInterceptor) (httpRequest, httpContext) -> {
+//                HttpRequestWrapper wrapper = (HttpRequestWrapper)httpRequest;
+//                String uri = wrapper.getURI().toString();
+//                uri = uri.replace(INCLUDE_TYPE_NAME + "=false", INCLUDE_TYPE_NAME + "=true");
+//                String type = MAPPING_TYPE_DEFAULT;
+//                if (null != wrapper.getFirstHeader(MAPPING_TYPE_HEAD)) {
+//                    type = wrapper.getFirstHeader(MAPPING_TYPE_HEAD).getValue();
+//                }
+//                uri = uri.replace(MAPPING_PATH, MAPPING_PATH + "/" + type);
+//                try {
+//                    wrapper.setURI(new URI(uri));
+//                } catch (URISyntaxException e) {
+//                    e.printStackTrace();
+//                }
+//            });
+//
+//            httpClientBuilder.setMaxConnTotal(1);
+//            return httpClientBuilder;
+//        });
+//        restClientBuilder.setRequestConfigCallback(
+//                requestConfigBuilder -> requestConfigBuilder
+//                        .setContentCompressionEnabled(true)
+//                        .setConnectTimeout(5000)
+//                        .setConnectionRequestTimeout(5000)
+//                        .setSocketTimeout(60000));
+//
+//        RestHighLevelClient restClient = new RestHighLevelClient(restClientBuilder);
+//        GetIndexRequest getIndexRequest = new GetIndexRequest("kg.user_group");
+//        getIndexRequest.setMasterTimeout(TimeValue.timeValueMillis(30000));
+//        getIndexRequest.setTimeout(TimeValue.timeValueMillis(60000));
+//
+//
+//
+//        RequestOptions.Builder builder = RequestOptions.DEFAULT.toBuilder();
+//        builder.setHttpAsyncResponseConsumerFactory(
+//                new HttpAsyncResponseConsumerFactory.HeapBufferedResponseConsumerFactory(HEAP_BUFFER_SIZE)
+//        );
+//        RequestOptions COMMON_OPTIONS = builder.build();
+//
+//        boolean exists = restClient.indices().exists(getIndexRequest, COMMON_OPTIONS);
+//        System.out.println(exists);
+
+    }
+
+    @Test
+    public void testRead5() throws IOException{
+        RestHighLevelClient restClient = new RestHighLevelClient(
+                RestClient.builder(HttpHost.create("http://192.168.200.18:9212")));
+
+        GetIndexRequest request = new GetIndexRequest();
+        request.indices("kg.user_group");
+        request.local(false);
+        request.humanReadable(true);
+        boolean exists  = restClient.indices().exists(request) ;
+
+
+
+
+        System.out.println(exists);
+    }
+
     @Test
     public void testRead3() throws IOException {
         JestClientFactory factory = new JestClientFactory();
@@ -139,6 +222,8 @@ public class EsTest implements Serializable {
                 .connTimeout(30000)
                 .maxTotalConnection(200)
                 .discoveryFrequency(5L, TimeUnit.MINUTES);
+        BasicCredentialsProvider customCredentialsProvider = new BasicCredentialsProvider();
+        httpClientConfig.credentialsProvider(customCredentialsProvider);
         httpClientConfig.setPreemptiveAuth(new HttpHost("http://192.168.200.18:9212"));
 
         factory.setHttpClientConfig(httpClientConfig.build());
