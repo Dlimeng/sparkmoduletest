@@ -205,12 +205,12 @@ public class EsTest implements Serializable {
         request.indices("kg.user_group");
         request.local(false);
         request.humanReadable(true);
-        boolean exists  = restClient.indices().exists(request) ;
+       // boolean exists  = restClient.indices().exists(request) ;
 
 
 
 
-        System.out.println(exists);
+      //  System.out.println(exists);
     }
 
     @Test
