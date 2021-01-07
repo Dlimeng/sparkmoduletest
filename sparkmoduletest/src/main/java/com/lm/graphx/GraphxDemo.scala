@@ -62,19 +62,18 @@ object GraphxDemo {
     //创建顶点数据集
     val vertexRDD:RDD[(VertexId,(String,String))] = context.makeRDD(Array(
       (3L,("zhangsan","student")),
-      (7L,("wangchen","博士后")),
-      (5L,("zhangyu","教授")),
-      (2L,("wangguo","教授")),
-      (4L,("wangguo","教授")),
-      (6L,("wangguo","教授"))
+      (7L,("limeng","学生")),
+      (5L,("lisi","老师")),
+      (2L,("wangwu","老师")),
+      (4L,("zhaoliu","老师")),
+      (6L,("wangguo","老师"))
     ))
     //创建边的数据
     val edgesRDD:RDD[Edge[String]] = context.makeRDD(Array(
-      Edge(3L,7L,"合作者")
-//      Edge(5L,3L,"指导"),
-//      Edge(2L,5L,"同事"),
-//      Edge(5L,7L,"同事"),
-//      Edge(5L,7L,"222")
+      Edge(3L,7L,"测试关系"),
+      Edge(5L,3L,"测试指导"),
+      Edge(2L,5L,"测试朋友"),
+      Edge(5L,7L,"测试朋友")
     ))
 
     //构建一个图
@@ -130,19 +129,19 @@ object GraphxDemo {
 //    graphx.mapVertices((id,attr)=>attr._1)
 //      .triplets
 //      .collect
-//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
+//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}  edge=${triplet.attr}  dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
 //
 //    println("reverse: ")
 //    graphx.reverse.triplets
 //      .collect
-//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
+//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr} edge=${triplet.attr}  dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
 //
 //    //
 //    println("subgraph: ")
 //    //满足三元组边判断，满足顶点的判定
-//    graphx.subgraph(x=>if(x.attr=="同事") true else false,(id,attr)=>true).triplets
+//    graphx.subgraph(x=>if(x.attr=="测试朋友") true else false,(id,attr)=>true).triplets
 //      .collect
-//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
+//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}  edge=${triplet.attr}  dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
 //
 //
 //    println("mask: ")
@@ -157,7 +156,7 @@ object GraphxDemo {
 //    val validGraph = graphx.subgraph(vpred = (id, attr) => attr._2 != "student")
 //    graphx.mask(validGraph).triplets
 //      .collect
-//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
+//      .foreach(triplet => println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}  edge=${triplet.attr}  dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
 //
 //
 //    val graphx3 = graphx.mask(validGraph)
@@ -177,12 +176,12 @@ object GraphxDemo {
 //    println("连通图 vertices:")
 //    ccGraph.vertices.collect().foreach(println(_))
 //
-//    //groupEdges 根据边分组，合并多重图中并行边（如顶点对之间重复的边）
+    //groupEdges 根据边分组，合并多重图中并行边（如顶点对之间重复的边）
 //    println("groupEdges:")
-//    graphx.groupEdges((e1,e2)=>e1+e2).triplets.collect().foreach(triplet=>println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}--edge=${triplet.attr}--dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
+//    graphx.partitionBy(PartitionStrategy.RandomVertexCut,1).groupEdges((e1,e2)=>e1+e2).triplets.collect().foreach(triplet=>println(s"srcId=${triplet.srcId} srcAttr=${triplet.srcAttr}  edge=${triplet.attr}  dstId=${triplet.dstId} dstAttr=${triplet.dstAttr} "))
 
     // collectNeighbors 聚合 该方法的作用是收集每个顶点的邻居顶点的顶点id和顶点属性
-    println("collectNeighbors:")
+//    println("collectNeighbors:")
     /**
       * EdgeDirection.out：出的方向
       * EdgeDirection.in:入的方向
@@ -191,20 +190,20 @@ object GraphxDemo {
       *
       * 收集邻居节点数据，边的另一个顶点
       */
-    graphx.collectNeighbors(EdgeDirection.Either).collect().foreach(f=>{
-      val colls : Array[(VertexId, (String, String))] = f._2
-      println(s"VertexId:${f._1} ${colls.foreach(print(_))}")
-    })
-
-
-    println("collectNeighborIds")
-
-    graphx.collectNeighborIds(EdgeDirection.Either).collect().foreach(f=>{
-      val colls :Array[(VertexId)] = f._2
-      println(s"VertexId:${f._1} ${colls.foreach(print(_))}")
-    })
-
-    println("aggregateMessages:")
+//    graphx.collectNeighbors(EdgeDirection.Either).collect().foreach(f=>{
+//      val colls : Array[(VertexId, (String, String))] = f._2
+//      println(s"VertexId:${f._1} ${colls.foreach(println(_))}")
+//    })
+//
+//
+//    println("collectNeighborIds")
+//
+//    graphx.collectNeighborIds(EdgeDirection.Either).collect().foreach(f=>{
+//      val colls :Array[(VertexId)] = f._2
+//      println(s"VertexId:${f._1} ${colls.foreach(println(_))}")
+//    })
+//
+//    println("aggregateMessages:")
 
 
   }

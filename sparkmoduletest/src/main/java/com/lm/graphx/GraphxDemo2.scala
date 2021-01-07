@@ -18,18 +18,17 @@ object GraphxDemo2 {
     //（id,结果集）
     val vertices = Array((1L,("SFO")),(2L,("ORD")),(3L,("DFW")))
     val context = session.sparkContext
-    // Create an RDD for the vertices
+
     val users: RDD[(VertexId, (String, String))] =
       context.parallelize(Array((3L, ("rxin", "student")), (7L, ("jgonzal", "postdoc")),
         (5L, ("franklin", "prof")), (2L, ("istoica", "prof"))))
-    // Create an RDD for edges 边 起始点，目标点，数据
+
     val relationships: RDD[Edge[(String,String)]] =
       context.parallelize(Array(Edge(3L, 7L, ("collab","testcollab")),    Edge(5L, 3L, ("advisor","testadvisor")),
         Edge(2L, 5L, ("colleague","testcolleague")), Edge(5L, 7L, ("pi","testpi"))))
-    // Define a default user in case there are relationship with missing user
-    val defaultUser = ("John Doe", "Missing")
 
-    val graph = Graph(users, relationships, defaultUser)
+
+    val graph = Graph(users, relationships)
 
 
     val vertices1 = graph.vertices.filter{case (id,(name,pos)) => pos == "postdoc"}.count()
