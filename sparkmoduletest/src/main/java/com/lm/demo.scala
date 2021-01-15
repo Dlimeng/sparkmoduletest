@@ -36,9 +36,12 @@ object demo {
 
 //    println("creator")
 
-     val list = Array(1,2,3,4,5)
+//     val list = Array(1,2,3,4,5)
+//
+//     println(list.tail.fold(0)(_ + _))
 
-     println(list.tail.fold(0)(_ + _))
+    val d=Double.PositiveInfinity
+    println(d)
 
 
   }
