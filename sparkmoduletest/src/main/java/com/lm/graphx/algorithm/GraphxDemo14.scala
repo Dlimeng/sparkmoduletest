@@ -38,6 +38,16 @@ object GraphxDemo14 {
 
       val graph: Graph[Int, Double] = Graph(v, e)
 
+      val value3 = graph.outerJoinVertices(root)((vid, vd, ud) => {
+        val u = ud.getOrElse(Long.MaxValue)
+        if (u != Long.MaxValue) {
+          GroupVD(Set(MsgScore(u, u, u, 100D)), Set[MsgScore](), Set(vid))
+        } else {
+          GroupVD(Set[MsgScore](), Set[MsgScore](), Set())
+        }
+      })
+      println("value3")
+      value3.vertices.collect().foreach(println(_))
 
 
       val quaGroup = graph.outerJoinVertices(root)((vid,vd,ud)=>{
@@ -50,6 +60,8 @@ object GraphxDemo14 {
       }).pregel(GroupVD(Set[MsgScore](), Set[MsgScore](), Set[Long]()),
         10)(gProg, gSendMsg, gMergeMsg)
 
+      println("quaGroup.vertices")
+      quaGroup.vertices.foreach(println(_))
 
       val mm:RDD[GroupMem] = quaGroup.vertices.flatMap(f=>{
          f._2.accept.groupBy(_.groupId).map(m=>{
@@ -75,7 +87,7 @@ object GraphxDemo14 {
         * GroupMem(7,7,100.0,1,0,Set(7#7))
         */
       println("mm:")
-      mm.collect().foreach(println(_))
+      mm.sortBy(_.targetId).collect().foreach(println(_))
 
       val mb: RDD[MemRelBreadth] = mm.groupBy(_.groupId).flatMap(f => {
         f._2.flatMap(f2 => {

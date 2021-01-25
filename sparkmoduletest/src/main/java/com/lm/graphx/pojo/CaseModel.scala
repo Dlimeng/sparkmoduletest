@@ -30,6 +30,7 @@ case class MsgFlag(srcId: Long, score: Double, flag: Int, root: Boolean,path:Str
 }
 
 
+
 case class MsgScore(groupId: Long, from: Long, to: Long, score: Double) extends Serializable {
   override def toString: String = s"$groupId#$from#$to#$score"
 }

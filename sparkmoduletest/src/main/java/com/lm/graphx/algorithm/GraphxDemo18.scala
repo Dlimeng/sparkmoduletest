@@ -153,15 +153,16 @@ object GraphxDemo18 {
     childMM.collect().foreach(println(_))
 
 
-    val subGraphs = subGraph.outerJoinVertices(headSub)((vid,vd,ud)=>{
+    val value1: Graph[List[FromInfo], Double] = subGraph.outerJoinVertices(headSub)((vid, vd, ud) => {
       val u = ud.getOrElse(Long.MaxValue)
-      if(u != Long.MaxValue){
-        InAndOut(List(FromInfo(vid, true , null)), List[FromInfo]())
-      }else{
-        InAndOut(List(FromInfo(vid, false , null)), List[FromInfo]())
+      if (u != Long.MaxValue) {
+        InAndOut(List(FromInfo(vid, true, null)), List[FromInfo]())
+      } else {
+        InAndOut(List(FromInfo(vid, false, null)), List[FromInfo]())
       }
     }).pregel(List[MsgFlag](), 10)(vprogIn, sendMsgIn, mergeMsgIn)
       .mapVertices((id, vd) => vd.in.filter(_.srcId != id))
+    val subGraphs = value1
 
     println("FromInfos ")
     val subVertices =  subGraphs.vertices.filter(f=> f._2.nonEmpty).map(m=> (m._1,m._2.filter(_.root).distinct.sortBy(_.path.split("#").length).reverse))
