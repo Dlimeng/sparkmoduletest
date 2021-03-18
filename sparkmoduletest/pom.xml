@@ -21,7 +21,7 @@
         <kafka.version>1.0.1</kafka.version>
 <!--        <hive.version>3.1.0</hive.version>-->
         <!-- 6.7.1 -->
-        <es.version>6.2.3</es.version>
+        <es.version>7.11.2</es.version>
     </properties>
 
     <dependencies>
